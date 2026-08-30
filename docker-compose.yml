@@ -1,0 +1,80 @@
+﻿version: '3.8'
+
+services:
+  # 1. Public Nginx Reverse Proxy & React Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: jobshield-web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # 2. Flask REST API Backend Service (Behind Gunicorn WSGI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jobshield-backend
+    restart: always
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:-default-key-jobshield-fallback}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default-jwt-secret-jobshield-2026}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://jobshield_user:jobshield_secret@postgres:5432/jobshield_db}
+      - NODE_ML_URL=${NODE_ML_URL:-http://ml:5000/api/v1/analyze}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost,http://localhost:3000,http://127.0.0.1:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # 3. Node.js Express ML Classifier Service (Internal Only)
+  ml:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: jobshield-ml
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:5000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # 4. PostgreSQL Relational Database (Internal Only)
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobshield-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jobshield_db}
+      POSTGRES_USER: ${POSTGRES_USER:-jobshield_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobshield_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jobshield_user} -d ${POSTGRES_DB:-jobshield_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

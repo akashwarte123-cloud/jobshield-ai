@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobShield AI — Threat Forensic Command Center</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-panel: #0b1120;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --border-dim: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(0, 242, 254, 0.3);
+      --neon-cyan: #00f2fe;
+      --neon-blue: #4facfe;
+      --emerald-safe: #10b981;
+      --amber-caution: #f59e0b;
+      --crimson-danger: #ef4444;
+      --text-bright: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-bright);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-void); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    
+    .tactical-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-dim);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .badge-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--crimson-danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-caution { background: rgba(245, 158, 11, 0.15); color: var(--amber-caution); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-safe { background: rgba(16, 185, 129, 0.15); color: var(--emerald-safe); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-cyan { background: rgba(0, 242, 254, 0.12); color: var(--neon-cyan); border: 1px solid rgba(0, 242, 254, 0.3); }
+    
+    .btn-tactical {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-dim);
+      color: var(--text-bright);
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-tactical:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .btn-action {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #050811;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
+    .btn-action:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+    }
+    .terminal-input {
+      width: 100%;
+      background: #070c18;
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text-bright);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .terminal-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+    }
+    .highlight-threat {
+      background: rgba(239, 68, 68, 0.25);
+      border-bottom: 2px solid var(--crimson-danger);
+      color: #fecaca;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const TEST_TARGETS = [
+      {
+        id: 'target-1',
+        name: 'Target Alpha (Telegram Check Trap)',
+        title: 'Remote Executive Assistant & Data Entry Specialist',
+        company: 'Apex Global Logistics LLC',
+        email: 'recruiter.apexlogistics@gmail.com',
+        url: 'https://tinyurl.com/apex-remote-apply',
+        text: `Urgent position available! Earn $65/hr ($2,600 weekly) for flexible data entry tasks (1-2 hours daily). 
+No experience required, full remote training provided.
+
+All interviews are conducted via Telegram chat with our HR Manager Mr. Marcus Vance. Contact HR on Telegram @ApexRecruit2026 to start today.
+
+Note: Our financial department will issue a certified cashier's check to purchase your home office equipment and specialized laptop from our designated vendor. You must deposit the check and wire funds to the vendor within 24 hours of receipt.`
+      },
+      {
+        id: 'target-2',
+        name: 'Target Beta (Verified Corporate Offer)',
+        title: 'Senior Frontend Architect',
+        company: 'Stripe, Inc.',
+        email: 'recruiting@stripe.com',
+        url: 'https://stripe.com/careers/frontend-architect',
+        text: `Stripe is hiring a Senior Frontend Architect to lead core Merchant Platform web initiatives. 
+
+Key Responsibilities:
+- Architect high-throughput React/TypeScript application frameworks.
+- Optimize client-side rendering performance and Core Web Vitals across merchant dashboards.
+- Collaborate with security teams to enforce CSP policies and OAuth2 token hygiene.
+
+Qualifications:
+- 7+ years building enterprise web apps with React, TypeScript, and modern browser standards.
+- Full W2 employment payroll via Direct Deposit, equity, and healthcare benefits.`
+      }
+    ];
+
+    function CommandCenter() {
+      const [currentTarget, setCurrentTarget] = React.useState(TEST_TARGETS[0]);
+      const [title, setTitle] = React.useState(TEST_TARGETS[0].title);
+      const [company, setCompany] = React.useState(TEST_TARGETS[0].company);
+      const [email, setEmail] = React.useState(TEST_TARGETS[0].email);
+      const [url, setUrl] = React.useState(TEST_TARGETS[0].url);
+      const [text, setText] = React.useState(TEST_TARGETS[0].text);
+      
+      const [selectedThreatFilter, setSelectedThreatFilter] = React.useState('ALL');
+      const [sensitivity, setSensitivity] = React.useState('HIGH');
+      const [activeTab, setActiveTab] = React.useState('FORENSICS');
+
+      // Threat Calculation Logic
+      const hasTelegram = text.toLowerCase().includes('telegram') || text.toLowerCase().includes('whatsapp');
+      const hasCheck = text.toLowerCase().includes('check') || text.toLowerCase().includes('wire');
+      const hasFreeMail = email.includes('@gmail.com') || email.includes('@yahoo.com');
+      const hasUnrealisticPay = text.includes('$65/hr') || text.includes('$80/hr') || text.includes('no experience required');
+
+      let threatCount = 0;
+      const detectedVectors = [];
+
+      if (hasCheck) {
+        threatCount += 35;
+        detectedVectors.push({
+          id: 'VEC-01',
+          type: 'CRITICAL',
+          category: 'Financial Trap',
+          title: 'Fake Check & Upfront Equipment Wire Trap',
+          details: 'Demands candidate to deposit a certified check and wire funds to a third-party equipment vendor within 24 hours.'
+        });
+      }
+
+      if (hasTelegram) {
+        threatCount += 25;
+        detectedVectors.push({
+          id: 'VEC-02',
+          type: 'HIGH',
+          category: 'Communication Protocol',
+          title: 'Unverified Telegram/WhatsApp Interview Request',
+          details: 'Directs candidate to conduct text-only interview over instant messaging app with no video/phone verification.'
+        });
+      }
+
+      if (hasFreeMail) {
+        threatCount += 20;
+        detectedVectors.push({
+          id: 'VEC-03',
+          type: 'HIGH',
+          category: 'Domain Hygiene',
+          title: `Free Email Domain Discrepancy (@${email.split('@')[1] || ''})`,
+          details: `Recruiter uses a free public mail provider (@${email.split('@')[1] || ''}) instead of official corporate domain @${company.toLowerCase().replace(/[^a-z]/g,'')}.com.`
+        });
+      }
+
+      if (hasUnrealisticPay) {
+        threatCount += 15;
+        detectedVectors.push({
+          id: 'VEC-04',
+          type: 'MEDIUM',
+          category: 'Compensation Anomaly',
+          title: 'Unrealistic Pay-to-Qualification Ratio',
+          details: 'Offers $65+/hr for basic entry-level typing tasks requiring no prior skills or background experience.'
+        });
+      }
+
+      const riskScore = Math.min(threatCount, 100);
+      const isHighRisk = riskScore >= 50;
+
+      const handleSelectTarget = (target) => {
+        setCurrentTarget(target);
+        setTitle(target.title);
+        setCompany(target.company);
+        setEmail(target.email);
+        setUrl(target.url);
+        setText(target.text);
+      };
+
+      return (
+        <div className="tactical-grid">
+          {/* 1. Tactical Sidebar */}
+          <aside style={{ background: '#070b14', borderRight: '1px solid var(--border-dim)', padding: '20px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              {/* Brand Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px', paddingBottom: '16px', borderBottom: '1px solid var(--border-dim)' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'linear-gradient(135deg, #00f2fe, #4facfe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 0 15px rgba(0,242,254,0.4)' }}>
+                  🛡️
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em', color: '#fff' }}>
+                    JobShield <span style={{ color: 'var(--neon-cyan)' }}>SOC</span>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>v3.4 Forensic Center</span>
+                </div>
+              </div>
+
+              {/* Tactical Navigation */}
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <button
+                  onClick={() => setActiveTab('FORENSICS')}
+                  className="btn-tactical"
+                  style={{ width: '100%', justifyContent: 'flex-start', background: activeTab === 'FORENSICS' ? 'rgba(0, 242, 254, 0.12)' : 'transparent', color: activeTab === 'FORENSICS' ? 'var(--neon-cyan)' : 'var(--text-muted)', borderColor: activeTab === 'FORENSICS' ? 'rgba(0, 242, 254, 0.3)' : 'transparent' }}
+                >
+                  📡 Forensic Inspector
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('DOMAINS')}
+                  className="btn-tactical"
+                  style={{ width: '100%', justifyContent: 'flex-start', background: activeTab === 'DOMAINS' ? 'rgba(0, 242, 254, 0.12)' : 'transparent', color: activeTab === 'DOMAINS' ? 'var(--neon-cyan)' : 'var(--text-muted)', borderColor: activeTab === 'DOMAINS' ? 'rgba(0, 242, 254, 0.3)' : 'transparent' }}
+                >
+                  🌐 Domain Vault & WHOIS
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('RULES')}
+                  className="btn-tactical"
+                  style={{ width: '100%', justifyContent: 'flex-start', background: activeTab === 'RULES' ? 'rgba(0, 242, 254, 0.12)' : 'transparent', color: activeTab === 'RULES' ? 'var(--neon-cyan)' : 'var(--text-muted)', borderColor: activeTab === 'RULES' ? 'rgba(0, 242, 254, 0.3)' : 'transparent' }}
+                >
+                  ⚙️ Detection Heuristics
+                </button>
+              </nav>
+
+              {/* Target Presets Selector */}
+              <div style={{ marginTop: '32px' }}>
+                <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '10px' }}>
+                  Load Test Targets
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {TEST_TARGETS.map(target => (
+                    <button
+                      key={target.id}
+                      onClick={() => handleSelectTarget(target)}
+                      className="btn-tactical"
+                      style={{ fontSize: '0.75rem', padding: '8px 10px', textAlign: 'left', borderColor: currentTarget.id === target.id ? 'var(--neon-cyan)' : 'var(--border-dim)' }}
+                    >
+                      {target.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Live System Signal Status */}
+            <div style={{ background: '#050811', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-dim)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--emerald-safe)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--emerald-safe)', boxShadow: '0 0 8px var(--emerald-safe)' }}></span>
+                <span>SOC PIPELINE ACTIVE</span>
+              </div>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '4px' }}>
+                Latency: 142ms • Rules: 28 Active
+              </span>
+            </div>
+          </aside>
+
+          {/* 2. Main Workstation */}
+          <main style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Top Command Telemetry Bar */}
+            <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <span className="badge-tag badge-cyan">INCIDENT ANALYSIS WORKSTATION</span>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '6px', fontFamily: 'var(--font-sans)' }}>
+                  {title || 'Target Job Inspection'}
+                </h1>
+                <span style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                  Entity: {company || 'Unknown'} • Contact: {email || 'N/A'}
+                </span>
+              </div>
+
+              {/* Risk Dial Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#050811', padding: '12px 20px', borderRadius: '10px', border: isHighRisk ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(16,185,129,0.4)' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'block' }}>THREAT EVALUATION</span>
+                  <span className={`badge-tag ${isHighRisk ? 'badge-danger' : 'badge-safe'}`}>
+                    {isHighRisk ? 'HIGH RISK MALICIOUS' : 'VERIFIED BENIGN'}
+                  </span>
+                </div>
+
+                <div style={{ position: 'relative', width: '54px', height: '54px', borderRadius: '50%', border: `4px solid ${isHighRisk ? 'var(--crimson-danger)' : 'var(--emerald-safe)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#fff', boxShadow: isHighRisk ? '0 0 15px rgba(239,68,68,0.3)' : '0 0 15px rgba(16,185,129,0.3)' }}>
+                  {riskScore}
+                </div>
+              </div>
+            </div>
+
+            {/* Split Screen Interactive Workspace */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              {/* Left Pane: Target Code & Text Inspector */}
+              <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-cyan)' }}>
+                    📝 Target Text Payload
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>
+                    Tokens: {text.split(/\s+/).length} words
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Recruiter Email Address</label>
+                    <input className="terminal-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. recruiter@domain.com" />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Job Listing URL</label>
+                    <input className="terminal-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="e.g. https://domain.com/job" />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Full Job Posting Body</label>
+                    <textarea
+                      className="terminal-input"
+                      value={text}
+                      onChange={e => setText(e.target.value)}
+                      style={{ height: '220px', resize: 'vertical', lineHeight: '1.6' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Pane: Threat Vectors & Forensic Breakdown */}
+              <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-cyan)' }}>
+                    🔍 Detected Threat Vectors ({detectedVectors.length})
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>
+                    Rule Sensitivity: HIGH
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', maxHeight: '340px' }}>
+                  {detectedVectors.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', background: '#050811', borderRadius: '8px', border: '1px solid var(--border-dim)' }}>
+                      <span style={{ fontSize: '32px' }}>✅</span>
+                      <h4 style={{ color: 'var(--emerald-safe)', fontSize: '0.95rem', marginTop: '8px' }}>Clean Signal — No Vectors Triggered</h4>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Job posting passes standard heuristic & domain hygiene checks.</p>
+                    </div>
+                  ) : (
+                    detectedVectors.map((vec) => (
+                      <div
+                        key={vec.id}
+                        style={{
+                          background: '#050811',
+                          padding: '14px',
+                          borderRadius: '8px',
+                          border: vec.type === 'CRITICAL' ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(245,158,11,0.4)',
+                          borderLeft: vec.type === 'CRITICAL' ? '4px solid var(--crimson-danger)' : '4px solid var(--amber-caution)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                            [{vec.id}] {vec.title}
+                          </span>
+                          <span className={`badge-tag ${vec.type === 'CRITICAL' ? 'badge-danger' : 'badge-caution'}`}>
+                            {vec.type}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                          {vec.details}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Bottom Tactical Actions */}
+                <div style={{ display: 'flex', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-dim)' }}>
+                  <button className="btn-tactical btn-action" style={{ flex: 1, justifyContent: 'center' }}>
+                    🚨 Generate FTC/IC3 Cyber Complaint
+                  </button>
+
+                  <button className="btn-tactical" style={{ justifyContent: 'center' }}>
+                    💾 Export JSON Audit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<CommandCenter />);
+  </script>
+</body>
+</html>

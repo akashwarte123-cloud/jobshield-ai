@@ -1,0 +1,33 @@
+{
+  "name": "jobshield-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Grade AI Job Scam Detection & Company Verification Platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:extension": "npm run build --workspace=apps/extension",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:extension": "npm run build --workspace=apps/extension",
+    "build:all": "npm run build:shared && npm run build:web && npm run build:extension",
+    "typecheck": "tsc --build tsconfig.json",
+    "lint": "eslint \"{apps,packages}/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"{apps,packages,docker}/**/*.{ts,tsx,json,md,yml}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

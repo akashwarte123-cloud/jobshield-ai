@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeriJob — AI Job Scam Detector & Risk Analyzer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(18, 26, 44, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #a855f7;
+      --status-safe: #10b981;
+      --status-caution: #f59e0b;
+      --status-danger: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+    .app-container { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer;
+      font-family: var(--font-sans); transition: all 0.2s ease; text-decoration: none;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: #fff; }
+    .btn-secondary { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.12); }
+    .btn-sm { padding: 6px 12px; font-size: 0.82rem; border-radius: 8px; }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .gradient-text {
+      background: linear-gradient(135deg, #a5b4fc, #38bdf8, #c084fc);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-input, .form-textarea {
+      width: 100%; background: rgba(10, 15, 26, 0.8); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 12px 16px; color: #fff; font-family: var(--font-sans); outline: none;
+    }
+    .form-textarea { min-height: 140px; resize: vertical; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+    .badge-safe { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-caution { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .highlight-scam { background: rgba(239, 68, 68, 0.25); border-bottom: 2px solid #ef4444; color: #fecaca; padding: 2px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const SAMPLE_JOBS = [
+      {
+        id: 's1',
+        title: 'Remote Data Entry Specialist (Immediate Start)',
+        company: 'Apex Global Logistics',
+        email: 'hr.apexlogistics.careers@gmail.com',
+        url: 'https://tinyurl.com/apex-remote-apply',
+        description: 'We are urgently looking for a Remote Data Entry Specialist to join our team immediately! No experience required, full training provided. Pay is $65/hr or $2,600 weekly via Zelle or Crypto. Duties include simple typing, catalog updates, and online posting (1-2 hours daily). All interviews will be conducted via Telegram app with our HR Director. Note: We will send you a cashier check to purchase your home office equipment and laptop from our approved vendor. You must deposit the check and wire funds to vendor within 24 hours.'
+      },
+      {
+        id: 's2',
+        title: 'Senior Frontend Engineer (React & TypeScript)',
+        company: 'Stripe',
+        email: 'recruiting@stripe.com',
+        url: 'https://stripe.com/jobs/senior-frontend-engineer',
+        description: 'Stripe is expanding its Financial Connections team. We are looking for a Senior Frontend Engineer with 5+ years of experience in React, TypeScript, and web performance optimization. Build resilient, accessible user interfaces for global merchant payment dashboards. W2 Direct Deposit, competitive salary, and equity.'
+      }
+    ];
+
+    const SCAM_PATTERNS = [
+      { regex: /(interview\s+via|contact\s+on)\s*(telegram|whatsapp|signal)/i, title: 'Messaging App Interview Requirement', weight: 25, explanation: 'Legitimate HR teams do not conduct interviews exclusively via instant messaging text apps.' },
+      { regex: /(send\s+you\s+a\s+check|purchase\s+(home\s+office|equipment|laptop)|wire\s+funds)/i, title: 'Fake Check & Equipment Purchase Trap', weight: 35, explanation: 'CRITICAL: Asking you to deposit a check and wire money to an approved vendor is a classic fraudulent fake check scam.' },
+      { regex: /(\$([5-9]\d|[1-9]\d{2})\s*\/\s*hr).*(entry\s*level|data\s*entry)/i, title: 'Unrealistic Pay for Entry Level', weight: 25, explanation: 'Offering $60-$100+/hr for simple entry-level data entry is a common phishing lure.' },
+      { regex: /(payout|paid)\s+(via|in)\s*(crypto|bitcoin|zelle|cash\s*app|gift\s*card)/i, title: 'Irreversible / Non-Standard Payment Method', weight: 25, explanation: 'Legitimate employers pay via standard payroll (W2/1099 direct deposit), not Zelle or Crypto.' },
+      { regex: /(ssn|social\s+security\s+number|credit\s+score)\s*(required\s+before|for\s+application)/i, title: 'Premature Identity Theft Risk', weight: 20, explanation: 'Demanding SSN before a formal interview or job offer is a major identity theft risk.' }
+    ];
+
+    function analyzeJob(data) {
+      const fullText = `${data.title} ${data.company} ${data.description}`;
+      let weight = 0;
+      const flags = [];
+
+      SCAM_PATTERNS.forEach(p => {
+        if (p.regex.test(fullText)) {
+          weight += p.weight;
+          flags.push(p);
+        }
+      });
+
+      if (data.email && (data.email.includes('@gmail.com') || data.email.includes('@yahoo.com') || data.email.includes('@hotmail.com'))) {
+        weight += 20;
+        flags.push({ title: `Free Email Provider Used (@${data.email.split('@')[1]})`, weight: 20, explanation: 'Recruiter uses a free personal email address rather than an official corporate domain.' });
+      }
+
+      const score = Math.min(weight, 100);
+      let verdict = 'VERIFIED_SAFE';
+      let badge = 'badge-safe';
+
+      if (score >= 50) { verdict = 'HIGH_SCAM_DANGER'; badge = 'badge-danger'; }
+      else if (score >= 20) { verdict = 'MODERATE_CAUTION'; badge = 'badge-caution'; }
+
+      return { score, verdict, badge, flags };
+    }
+
+    function App() {
+      const [tab, setTab] = React.useState('analyzer');
+      const [formData, setFormData] = React.useState({ title: '', company: '', email: '', url: '', description: '' });
+      const [result, setResult] = React.useState(null);
+
+      const handleRunScan = (e) => {
+        if (e) e.preventDefault();
+        if (!formData.description && !formData.title) return alert('Please enter job title or description.');
+        setResult(analyzeJob(formData));
+      };
+
+      const handleLoadSample = (sample) => {
+        setFormData(sample);
+        setResult(analyzeJob(sample));
+      };
+
+      return (
+        <div className="app-container">
+          {/* Header */}
+          <header className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: '16px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🛡️</div>
+              <div>
+                <h1 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Veri<span className="gradient-text">Job</span></h1>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI Job Scam Detector & Risk Analyzer</p>
+              </div>
+            </div>
+
+            <nav style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setTab('analyzer')} className={`btn ${tab === 'analyzer' ? 'btn-primary' : 'btn-secondary'}`}>Analyzer</button>
+              <button onClick={() => setTab('presets')} className={`btn ${tab === 'presets' ? 'btn-primary' : 'btn-secondary'}`}>Sample Library</button>
+              <button onClick={() => setTab('extension')} className={`btn ${tab === 'extension' ? 'btn-primary' : 'btn-secondary'}`}>Chrome Extension</button>
+            </nav>
+          </header>
+
+          {/* Main View */}
+          {tab === 'analyzer' && (
+            <div>
+              {!result ? (
+                <div className="glass-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <h2>Job Scam Risk Scanner</h2>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={() => handleLoadSample(SAMPLE_JOBS[0])} className="btn btn-secondary btn-sm">Try Sample #1 (Scam)</button>
+                      <button onClick={() => handleLoadSample(SAMPLE_JOBS[1])} className="btn btn-secondary btn-sm">Try Sample #2 (Legit)</button>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleRunScan}>
+                    <div className="grid-2">
+                      <div className="form-group">
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Job Title</label>
+                        <input className="form-input" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. Remote Virtual Assistant" />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Company Name</label>
+                        <input className="form-input" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Apex Global Logistics" />
+                      </div>
+                    </div>
+
+                    <div className="grid-2">
+                      <div className="form-group">
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Recruiter Email</label>
+                        <input className="form-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="e.g. hr.apexlogistics@gmail.com" />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Job URL</label>
+                        <input className="form-input" value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} placeholder="e.g. https://tinyurl.com/apply" />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Job Description / Offer Text *</label>
+                      <textarea className="form-textarea" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Paste full job description or email offer text here..."></textarea>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>Run Multi-Factor Risk Scan</button>
+                  </form>
+                </div>
+              ) : (
+                <div className="glass-card">
+                  <button onClick={() => setResult(null)} className="btn btn-secondary btn-sm" style={{ marginBottom: '16px' }}>← Back to Form</button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div>
+                      <span className={`badge ${result.badge}`} style={{ marginBottom: '8px' }}>{result.verdict.replace(/_/g, ' ')}</span>
+                      <h2>{formData.title || 'Job Risk Audit'}</h2>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formData.company || 'Unknown Company'} • Recruiter Email: {formData.email || 'N/A'}</p>
+                    </div>
+                    <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(10,15,26,0.8)', border: '4px solid ' + (result.score >= 50 ? '#ef4444' : result.score >= 20 ? '#f59e0b' : '#10b981'), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '1.8rem', fontWeight: 800 }}>{result.score}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>/ 100 Risk</span>
+                    </div>
+                  </div>
+
+                  <h3>Flagged Fraud Indicators ({result.flags.length})</h3>
+                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {result.flags.length === 0 ? (
+                      <p style={{ color: 'var(--status-safe)' }}>✓ No high-risk scam indicators detected.</p>
+                    ) : (
+                      result.flags.map((f, idx) => (
+                        <div key={idx} style={{ background: 'rgba(10,15,26,0.6)', padding: '14px', borderRadius: '12px', borderLeft: '4px solid #ef4444' }}>
+                          <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>⚠️ {f.title} (+{f.weight} pts)</div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{f.explanation}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'presets' && (
+            <div className="grid-2">
+              {SAMPLE_JOBS.map(job => (
+                <div key={job.id} className="glass-card" style={{ cursor: 'pointer' }} onClick={() => handleLoadSample(job)}>
+                  <span className="badge badge-caution">{job.company}</span>
+                  <h3 style={{ marginTop: '8px' }}>{job.title}</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{job.description.slice(0, 150)}...</p>
+                  <button className="btn btn-primary btn-sm" style={{ marginTop: '14px' }}>Run Risk Scan</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'extension' && (
+            <div className="glass-card">
+              <h2>Chrome Extension Installation</h2>
+              <p style={{ marginTop: '8px', color: 'var(--text-muted)' }}>The Manifest V3 Extension is pre-built inside the <code style={{ color: '#38bdf8' }}>extension/</code> folder!</p>
+              <ol style={{ marginLeft: '20px', marginTop: '16px', lineHeight: '2' }}>
+                <li>Open Chrome and navigate to <code style={{ color: '#38bdf8' }}>chrome://extensions</code></li>
+                <li>Enable <strong>Developer Mode</strong> in the top right corner.</li>
+                <li>Click <strong>Load unpacked</strong> and select directory: <code style={{ color: '#38bdf8' }}>C:\Users\akash\.gemini\antigravity\scratch\job-scam-detector\extension</code></li>
+              </ol>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

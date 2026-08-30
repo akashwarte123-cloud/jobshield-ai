@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 60" fill="none">
+  <defs>
+    <linearGradient id="wg1" x1="0" y1="0" x2="360" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3CFFD0"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#3CFFD0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- JOB in teal -->
+  <text
+    x="0"
+    y="46"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif"
+    font-weight="900"
+    font-size="50"
+    fill="#3CFFD0"
+    letter-spacing="-1"
+  >JOB</text>
+
+  <!-- SHIELD in white -->
+  <text
+    x="133"
+    y="46"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif"
+    font-weight="900"
+    font-size="50"
+    fill="#FFFFFF"
+    letter-spacing="-1"
+  >SHIELD</text>
+</svg>
