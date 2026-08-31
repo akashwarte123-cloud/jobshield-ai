@@ -23,7 +23,6 @@ build/
 *.tsbuildinfo
 apps/*/dist/
 packages/*/dist/
-extension/
 apps/web/public/*.zip
 
 # Databases & Local Storage
@@ -75,3 +74,5 @@ coverage/
 .coverage
 htmlcov/
 
+
+extension/

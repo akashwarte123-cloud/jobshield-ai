@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="sg" x1="100" y1="16" x2="100" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3CFFD0"/>
+      <stop offset="100%" stop-color="#00A887"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Dark background circle -->
+  <rect width="200" height="200" rx="40" fill="#0B1A24"/>
+  <!-- Shield -->
+  <path
+    d="M100 24
+       L180 54
+       L180 100
+       C180 148 136 174 100 188
+       C64 174 20 148 20 100
+       L20 54 Z"
+    fill="url(#sg)"
+    filter="url(#glow)"
+  />
+  <!-- Figure head -->
+  <circle cx="100" cy="82" r="16" fill="#0B1A24"/>
+  <!-- Figure body -->
+  <path d="M80 136 C80 112 92 104 100 102 C108 104 120 112 120 136" fill="#0B1A24"/>
+  <!-- Arms -->
+  <path d="M80 108 C66 88 58 74 52 62" stroke="#0B1A24" stroke-width="11" stroke-linecap="round"/>
+  <path d="M120 108 C134 88 142 74 148 62" stroke="#0B1A24" stroke-width="11" stroke-linecap="round"/>
+</svg>

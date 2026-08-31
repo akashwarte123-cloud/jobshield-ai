@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs>
+    <linearGradient id="sg" x1="8" y1="1.28" x2="8" y2="15.36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3CFFD0"/>
+      <stop offset="100%" stop-color="#00A887"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.48" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Dark background circle -->
+  <rect width="16" height="16" rx="3.2" fill="#0B1A24"/>
+  <!-- Shield -->
+  <path
+    d="M8 1.92
+       L14.4 4.32
+       L14.4 8
+       C14.4 11.84 10.879999999999999 13.92 8 15.04
+       C5.12 13.92 1.6 11.84 1.6 8
+       L1.6 4.32 Z"
+    fill="url(#sg)"
+    filter="url(#glow)"
+  />
+  <!-- Figure head -->
+  <circle cx="8" cy="6.5600000000000005" r="1.28" fill="#0B1A24"/>
+  <!-- Figure body -->
+  <path d="M6.4 10.879999999999999 C6.4 8.96 7.36 8.32 8 8.16 C8.64 8.32 9.6 8.96 9.6 10.879999999999999" fill="#0B1A24"/>
+  <!-- Arms -->
+  <path d="M6.4 8.64 C5.279999999999999 7.04 4.640000000000001 5.92 4.16 4.96" stroke="#0B1A24" stroke-width="0.88" stroke-linecap="round"/>
+  <path d="M9.6 8.64 C10.72 7.04 11.36 5.92 11.84 4.96" stroke="#0B1A24" stroke-width="0.88" stroke-linecap="round"/>
+</svg>

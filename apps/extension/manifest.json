@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "JobShield AI — Real-Time Job Scam Detector",
+  "version": "1.0.0",
+  "description": "AI-powered real-time job scam detector and domain hygiene scanner for LinkedIn, Indeed, Naukri, Internshala, and Glassdoor.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.indeed.com/*",
+    "https://*.glassdoor.com/*",
+    "https://*.glassdoor.co.in/*",
+    "https://www.glassdoor.com/*",
+    "https://www.glassdoor.co.in/*",
+    "https://glassdoor.com/*",
+    "https://glassdoor.co.in/*",
+    "https://*.naukri.com/*",
+    "https://*.internshala.com/*",
+    "http://localhost:8000/*",
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "service_worker": "dist/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/*",
+        "https://*.indeed.com/*",
+        "https://*.glassdoor.com/*",
+        "https://*.glassdoor.co.in/*",
+        "https://www.glassdoor.com/*",
+        "https://www.glassdoor.co.in/*",
+        "https://glassdoor.com/*",
+        "https://glassdoor.co.in/*",
+        "https://*.naukri.com/*",
+        "https://*.internshala.com/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["dist/content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16":  "assets/jobshield-icon-16.png",
+    "32":  "assets/jobshield-icon-32.png",
+    "48":  "assets/jobshield-icon-48.png",
+    "128": "assets/jobshield-icon-128.png"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "JobShield AI Security Inspector",
+    "default_icon": {
+      "16":  "assets/jobshield-icon-16.png",
+      "32":  "assets/jobshield-icon-32.png",
+      "48":  "assets/jobshield-icon-48.png",
+      "128": "assets/jobshield-icon-128.png"
+    }
+  }
+}

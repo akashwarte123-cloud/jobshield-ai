@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JobShield AI Popup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #040712;
+      --bg-card: #0A0F1D;
+      --border: rgba(56, 189, 248, 0.18);
+      --text: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --primary: #38BDF8;
+      --primary-dim: rgba(56, 189, 248, 0.1);
+      --success: #10B981;
+      --success-dim: rgba(16, 185, 129, 0.1);
+      --danger: #EF4444;
+      --danger-dim: rgba(239, 68, 68, 0.1);
+      --warning: #F59E0B;
+      --warning-dim: rgba(245, 158, 11, 0.1);
+      --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    body {
+      width: 360px;
+      margin: 0;
+      padding: 16px;
+      background: var(--bg-base);
+      color: var(--text);
+      font-family: var(--font);
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    /* Button CSS helper classes to avoid inline script CSP violations */
+    .js-btn-primary {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: #040712;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(56, 189, 248, 0.15);
+      transition: opacity 0.2s;
+    }
+    .js-btn-primary:hover {
+      opacity: 0.9;
+    }
+    .js-btn-secondary {
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .js-btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    .js-settings-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      padding: 4px;
+      font-size: 15px;
+      transition: color 0.2s;
+    }
+    .js-settings-btn:hover {
+      color: var(--text);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="popup-root"></div>
+  <script src="../dist/popup.js" type="module"></script>
+</body>
+</html>
