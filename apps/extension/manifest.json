@@ -19,6 +19,8 @@
     "https://glassdoor.co.in/*",
     "https://*.naukri.com/*",
     "https://*.internshala.com/*",
+    "https://jobshield-ai-backend-6v0b.onrender.com/*",
+    "https://*.vercel.app/*",
     "http://localhost:8000/*",
     "http://localhost:3000/*"
   ],
@@ -39,6 +41,7 @@
         "https://glassdoor.co.in/*",
         "https://*.naukri.com/*",
         "https://*.internshala.com/*",
+        "https://*.vercel.app/*",
         "http://localhost:3000/*"
       ],
       "js": ["dist/content.js"],
