@@ -486,7 +486,22 @@ function renderAuthRequired(root: HTMLElement, isExpired = false) {
   root.appendChild(card);
 
   document.getElementById('go-to-auth-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://jobshield-ai-web.vercel.app/?view=AUTH' });
+    const authUrl = 'https://jobshield-ai-web.vercel.app/?view=AUTH';
+    try {
+      chrome.tabs.query({}, (tabs) => {
+        const existingTab = (tabs || []).find(t => t.url && (t.url.includes('jobshield-ai-web.vercel.app') || t.url.includes('localhost:3000')));
+        if (existingTab && existingTab.id) {
+          chrome.tabs.update(existingTab.id, { active: true });
+          if (existingTab.windowId) {
+            chrome.windows.update(existingTab.windowId, { focused: true });
+          }
+        } else {
+          chrome.tabs.create({ url: authUrl });
+        }
+      });
+    } catch (e) {
+      chrome.tabs.create({ url: authUrl });
+    }
   });
 
   document.getElementById('continue-guest-btn')?.addEventListener('click', () => {

@@ -906,7 +906,10 @@ export default function App() {
                 {currentPath === '/app/analyze' && <JobAnalyzerPage />}
                 {currentPath === '/app/verify-company' && <CompanyVerificationPage />}
                 {currentPath === '/app/verify-offer' && <OfferVerifyPage />}
-                {currentPath === '/app/reports' && <ReportsPage onNavigate={(v) => navigate('/app/home')} />}
+                {currentPath === '/app/reports' && <ReportsPage onNavigate={(v) => {
+                  if (v === 'ANALYZER') navigate('/app/analyze');
+                  else navigate('/app/home');
+                }} />}
                 {currentPath === '/app/saved-jobs' && <SavedJobsPage />}
                 {currentPath === '/app/extension' && <ExtensionPlaygroundPage onNavigate={(v) => navigate('/app/home')} />}
                 {currentPath === '/app/settings' && (

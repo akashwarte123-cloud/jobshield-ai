@@ -144,29 +144,34 @@ function extractLinkedInTitle(root: Element): string {
     '.jobs-search-two-pane__details h1',
     '.jobs-search__job-details h1',
     '.jobs-details h1',
-    '.jobs-details h2',
-    '[class*="job-title"]',
+    'h1[class*="title"]',
     'h1',
-    'h2'
+    '.job-details-jobs-unified-top-card__job-title-link',
+    '[class*="job-title"]'
+  ];
+
+  const invalidTitleKeywords = [
+    'notifications', 'jobshield', 'settings', 'feedback', 'linkedin',
+    'search', 'sign in', 'join now', 'are these results helpful',
+    'results helpful', 'help us improve', 'people also viewed',
+    'similar jobs', 'recommended for you', 'about the company',
+    'about us', 'see more', 'show more', 'report this job'
   ];
 
   for (const selector of selectors) {
     const elements = root.querySelectorAll(selector);
     for (const el of Array.from(elements)) {
       if (isVisibleElement(el)) {
+        if (el.closest('[class*="feedback"], [class*="survey"], [class*="footer"]')) {
+          continue;
+        }
         const text = el.textContent?.trim() || '';
         const lower = text.toLowerCase();
-        if (
-          text.length >= 3 && 
-          !lower.includes('notifications') && 
-          !lower.includes('jobshield') && 
-          !lower.includes('settings') &&
-          !lower.includes('feedback') &&
-          !lower.includes('linkedin') &&
-          !lower.includes('search') &&
-          !lower.includes('sign in') &&
-          !lower.includes('join now')
-        ) {
+        
+        if (text.length >= 3 && !invalidTitleKeywords.some(kw => lower.includes(kw))) {
+          if (text.endsWith('?') && !lower.includes('engineer') && !lower.includes('developer') && !lower.includes('manager')) {
+            continue;
+          }
           return text;
         }
       }
