@@ -126,6 +126,10 @@ export default function App() {
   useEffect(() => {
     const checkAuth = () => {
       const authStr = localStorage.getItem('js_logged_in_user');
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view');
+      const hasAnalysisId = params.has('analysisId');
+
       if (authStr) {
         try {
           const parsed = JSON.parse(authStr);
@@ -136,19 +140,28 @@ export default function App() {
             
             // Redirect to matching role boundary if at base/root
             if (window.location.pathname === '/' || window.location.pathname === '/login') {
-              navigate(userRole === 'ADMIN' ? '/admin/dashboard' : '/app/home');
+              if (viewParam === 'REPORTS' || hasAnalysisId) {
+                navigate('/app/reports' + window.location.search);
+              } else {
+                navigate(userRole === 'ADMIN' ? '/admin/dashboard' : '/app/home');
+              }
             }
           }
         } catch (e) {
           // ignore
         }
       } else {
-        // Not logged in -> if not on landing/login/privacy/terms, redirect to /
-        if (
+        // Not logged in -> if viewing REPORTS or analysisId, route to login or reports
+        if (viewParam === 'REPORTS' || hasAnalysisId) {
+          if (window.location.pathname === '/' || window.location.pathname === '/login') {
+            navigate('/app/reports' + window.location.search);
+          }
+        } else if (
           window.location.pathname !== '/' &&
           window.location.pathname !== '/login' &&
           window.location.pathname !== '/privacy' &&
-          window.location.pathname !== '/terms'
+          window.location.pathname !== '/terms' &&
+          !window.location.pathname.startsWith('/app/reports')
         ) {
           navigate('/');
         }

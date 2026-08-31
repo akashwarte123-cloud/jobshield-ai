@@ -17,7 +17,7 @@ class Config:
     JWT_EXPIRATION_MINUTES = int(os.getenv('JWT_EXPIRATION_MINUTES', 60))
     
     # Node.js ML Service integration endpoint
-    NODE_ML_URL = os.getenv('NODE_ML_URL', 'http://127.0.0.1:5000/api/v1/analyze')
+    NODE_ML_URL = os.getenv('NODE_ML_URL', 'none')
     
     # CORS (Parsed as list from comma-separated string)
     CORS_ALLOWED_ORIGINS = [
@@ -34,6 +34,7 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     ENV = 'testing'
+    NODE_ML_URL = 'http://127.0.0.1:5000/api/v1/analyze'
     # Use memory database for testing
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     # Use minimal PBKDF2 rounds so generate_password_hash is near-instant in tests.

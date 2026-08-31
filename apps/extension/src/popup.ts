@@ -736,7 +736,11 @@ function renderResult(root: HTMLElement) {
   root.appendChild(container);
 
   document.getElementById('view-full-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: `https://jobshield-ai-web.vercel.app/?view=REPORTS&reportData=${reportData}` });
+    const analysisId = scanResult?.analysis_id || scanResult?.data?.analysis_id || scanResult?.id || '';
+    const targetUrl = analysisId 
+      ? `https://jobshield-ai-web.vercel.app/app/reports?view=REPORTS&analysisId=${analysisId}`
+      : `https://jobshield-ai-web.vercel.app/app/reports?view=REPORTS&reportData=${reportData}`;
+    chrome.tabs.create({ url: targetUrl });
   });
 
   document.getElementById('scan-again-btn')?.addEventListener('click', () => {

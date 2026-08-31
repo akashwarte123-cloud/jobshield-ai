@@ -59,10 +59,22 @@ class MLService:
 
         # Load target endpoint from current configuration
         try:
-            node_ml_url = current_app.config["NODE_ML_URL"]
+            node_ml_url = current_app.config.get("NODE_ML_URL", "")
         except RuntimeError:
-            # Fallback for testing/contexts without application runtime active
-            node_ml_url = "http://127.0.0.1:5000/api/v1/analyze"
+            node_ml_url = ""
+
+        # If NODE_ML_URL is disabled, empty, or set to 'none', use Python Rule Engine fallback
+        if not node_ml_url or str(node_ml_url).lower() in ('none', 'disabled', 'false'):
+            from app.services.rule_engine import RuleEngine
+            rule_eval = RuleEngine.analyze(job_data)
+            r_score = rule_eval.get("rule_score", 0)
+            verdict = "DANGER" if r_score >= 60 else ("CAUTION" if r_score >= 30 else "SAFE")
+            return {
+                "prediction": verdict,
+                "ml_score": r_score,
+                "confidence": 0.90,
+                "model_version": "python-rule-engine-v1"
+            }
 
         headers = {
             "Content-Type": "application/json",

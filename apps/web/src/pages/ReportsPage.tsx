@@ -188,6 +188,11 @@ export function ReportsPage({ onNavigate }: ReportsPageProps) {
 
   useEffect(() => {
     fetchHistory();
+    const params = new URLSearchParams(window.location.search);
+    const analysisIdParam = params.get('analysisId');
+    if (analysisIdParam) {
+      handleViewReport(analysisIdParam);
+    }
   }, []);
 
   // Lock background body scroll and listen for Escape key when modal is active
