@@ -23,8 +23,6 @@ build/
 *.tsbuildinfo
 apps/*/dist/
 packages/*/dist/
-apps/web/public/*.zip
-
 # Databases & Local Storage
 *.db
 *.sqlite
