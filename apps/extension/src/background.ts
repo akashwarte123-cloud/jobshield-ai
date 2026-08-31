@@ -59,8 +59,18 @@ try {
     }
 
     if (action === 'GET_AUTH_STATUS') {
-      sendResponse({ success: true, user: authenticatedUser });
-      return false;
+      try {
+        chrome.storage.local.get(['authenticatedUser'], (result) => {
+          const user = (result && result.authenticatedUser) || authenticatedUser;
+          if (user) {
+            authenticatedUser = user;
+          }
+          sendResponse({ success: true, user });
+        });
+      } catch (e) {
+        sendResponse({ success: true, user: authenticatedUser });
+      }
+      return true; // asynchronous response
     }
 
     if (action === 'SIGN_OUT') {

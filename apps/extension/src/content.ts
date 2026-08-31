@@ -1516,7 +1516,7 @@ let lastUrl = '';
 let lastJobKey = '';
 let checkTimeout: any = null;
 let retryCount = 0;
-const MAX_RETRIES = 6; // Polling dynamic DOM details up to 3 seconds
+const MAX_RETRIES = 12; // Polling dynamic DOM details up to 6 seconds
 
 let detailObserver: MutationObserver | null = null;
 let isTerminated = false;
@@ -1950,14 +1950,8 @@ function handlePageChange(resetRetry = true) {
       });
     });
   } else {
-    // Retry polling if URL matches and contains a selected job ID, but DOM components are not loaded yet
-    const url = new URL(window.location.href);
-    const isLinkedInJob = url.searchParams.get('currentJobId') || url.pathname.includes('/jobs/view/');
-    const isIndeedJob = url.hostname.includes('indeed.com') && (url.searchParams.has('jk') || url.searchParams.has('vjk') || url.pathname.includes('/viewjob'));
-    const isNaukriJob = url.hostname.includes('naukri.com') && (url.pathname.includes('/job-listings') || url.pathname.includes('/description') || url.pathname.includes('-jd-') || url.pathname.includes('/jobs-'));
-    const isGlassdoorJob = url.hostname.includes('glassdoor.') && (url.pathname.includes('/job') || url.pathname.includes('/job-listing') || url.searchParams.has('jl'));
-    
-    const shouldRetry = isLinkedInJob || isIndeedJob || isNaukriJob || isGlassdoorJob;
+    const adapter = getActiveAdapter();
+    const shouldRetry = Boolean(adapter);
     if (shouldRetry && retryCount < MAX_RETRIES) {
       retryCount++;
       if (checkTimeout) clearTimeout(checkTimeout);
