@@ -286,15 +286,26 @@ function sendBadgeUpdate(cacheKey: string, score: number | null | undefined, lev
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       if (activeTab && activeTab.id) {
-        chrome.tabs.sendMessage(activeTab.id, {
-          action: 'INJECT_BADGE',
-          score,
-          level,
-          isOffline,
-          jobKey: cacheKey
-        }, () => {
+        const tabId = activeTab.id;
+        const msg = { action: 'INJECT_BADGE', score, level, isOffline, jobKey: cacheKey };
+        
+        chrome.tabs.sendMessage(tabId, msg, () => {
           if (chrome.runtime.lastError) {
-            // Silently ignore context invalidation errors
+            // Auto-inject content.js if context was invalidated or missing
+            try {
+              chrome.scripting.executeScript({
+                target: { tabId },
+                files: ['content.js']
+              }, () => {
+                if (!chrome.runtime.lastError) {
+                  setTimeout(() => {
+                    chrome.tabs.sendMessage(tabId, msg, () => {
+                      if (chrome.runtime.lastError) {}
+                    });
+                  }, 300);
+                }
+              });
+            } catch (e) {}
           }
         });
       }

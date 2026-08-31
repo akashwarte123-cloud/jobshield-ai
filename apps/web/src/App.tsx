@@ -896,18 +896,18 @@ export default function App() {
             {role === 'USER' && (
               <>
                 {currentPath === '/app/home' && <HomePage onNavigate={(v) => {
-                  if (v === 'REPORTS') navigate('/app/reports');
-                  else if (v === 'ANALYZER') navigate('/app/analyze');
+                  if (v === 'ANALYZER' || v === 'ANALYZE') navigate('/app/analyze');
+                  else if (v === 'REPORTS' || v === 'HISTORY') navigate('/app/reports');
                   else if (v === 'COMPANY_VERIFY') navigate('/app/verify-company');
                   else if (v === 'OFFER_VERIFY') navigate('/app/verify-offer');
-                  else if (v === 'ADMIN') navigate('/app/settings');
+                  else if (v === 'ADMIN' || v === 'SETTINGS') navigate('/app/settings');
                   else navigate('/app/home');
                 }} />}
                 {currentPath === '/app/analyze' && <JobAnalyzerPage />}
                 {currentPath === '/app/verify-company' && <CompanyVerificationPage />}
                 {currentPath === '/app/verify-offer' && <OfferVerifyPage />}
                 {currentPath === '/app/reports' && <ReportsPage onNavigate={(v) => {
-                  if (v === 'ANALYZER') navigate('/app/analyze');
+                  if (v === 'ANALYZER' || v === 'ANALYZE') navigate('/app/analyze');
                   else navigate('/app/home');
                 }} />}
                 {currentPath === '/app/saved-jobs' && <SavedJobsPage />}

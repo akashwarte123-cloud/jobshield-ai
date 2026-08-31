@@ -94,17 +94,39 @@ async function checkAuth() {
   return new Promise<void>((resolve) => {
     try {
       chrome.runtime.sendMessage({ action: 'GET_AUTH_STATUS' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log("[JobShield] Auth status check error:", chrome.runtime.lastError.message);
+        if (!chrome.runtime.lastError && response && response.success && response.user) {
+          authUser = response.user;
           resolve();
           return;
         }
+
+        // Active tab sync fallback: query open web app tabs directly
         try {
-          if (response && response.success) {
-            authUser = response.user;
-          }
-        } catch (e) {}
-        resolve();
+          chrome.tabs.query({}, (tabs) => {
+            const webTab = (tabs || []).find(t => t.url && (t.url.includes('jobshield-ai-web.vercel.app') || t.url.includes('localhost:3000')));
+            if (webTab && webTab.id) {
+              chrome.scripting.executeScript({
+                target: { tabId: webTab.id },
+                func: () => localStorage.getItem('js_logged_in_user')
+              }, (results) => {
+                if (!chrome.runtime.lastError && results && results[0] && results[0].result) {
+                  try {
+                    const parsed = JSON.parse(results[0].result as string);
+                    if (parsed && (parsed.user || parsed.token)) {
+                      authUser = parsed.user || parsed;
+                      chrome.runtime.sendMessage({ action: 'SYNC_AUTH', payload: parsed });
+                    }
+                  } catch (e) {}
+                }
+                resolve();
+              });
+            } else {
+              resolve();
+            }
+          });
+        } catch (e) {
+          resolve();
+        }
       });
     } catch (e) {
       resolve();
@@ -122,11 +144,32 @@ async function detectActiveTabJob() {
             resolve();
             return;
           }
+          const tabId = activeTab.id;
 
-          chrome.tabs.sendMessage(activeTab.id, { action: 'GET_JOB_DATA' }, (response) => {
+          chrome.tabs.sendMessage(tabId, { action: 'GET_JOB_DATA' }, (response) => {
             if (chrome.runtime.lastError) {
-              console.log("[JobShield] GET_JOB_DATA tab message error:", chrome.runtime.lastError.message);
-              resolve();
+              // Try auto-injecting content.js
+              try {
+                chrome.scripting.executeScript({
+                  target: { tabId },
+                  files: ['content.js']
+                }, () => {
+                  if (!chrome.runtime.lastError) {
+                    setTimeout(() => {
+                      chrome.tabs.sendMessage(tabId, { action: 'GET_JOB_DATA' }, (res2) => {
+                        if (!chrome.runtime.lastError && res2 && res2.success && res2.data && res2.data.description) {
+                          currentJob = res2.data;
+                        }
+                        resolve();
+                      });
+                    }, 300);
+                  } else {
+                    resolve();
+                  }
+                });
+              } catch (e) {
+                resolve();
+              }
               return;
             }
             try {
