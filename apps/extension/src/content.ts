@@ -1737,6 +1737,17 @@ try {
         return false;
       }
 
+      if (request.action === 'SCAN_RESULT' && request.success && request.data) {
+        const adapter = getActiveAdapter();
+        const jobData = adapter ? extractJobData(adapter) : null;
+        const currentKey = jobData ? getCacheKey(jobData) : '';
+        if (!request.cacheKey || request.cacheKey === currentKey) {
+          injectBadge(request.data.score, request.data.level, request.data.isOffline, false);
+        }
+        sendResponse({ success: true });
+        return false;
+      }
+
       sendResponse({ success: false, error: 'Unknown action in content script' });
       return false;
     } catch (err) {
@@ -1968,6 +1979,9 @@ function handlePageChange(resetRetry = true) {
           if (response && response.success && response.exists && response.data) {
             const cached = response.data;
             injectBadge(cached.score, cached.level, cached.isOffline, false);
+          } else {
+            // Trigger automatic background scan for new un-cached job
+            chrome.runtime.sendMessage({ action: 'SCAN_JOB', payload: jobData });
           }
         } catch (e) {
           removeBadge();
