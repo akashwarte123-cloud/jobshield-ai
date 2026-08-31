@@ -1725,7 +1725,8 @@ let lastAuthStr = '';
 
 function checkAndSyncAuth() {
   safeChromeCall(() => {
-    if (window.location.origin === 'http://localhost:3000') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host.includes('vercel.app') || host.includes('jobshield')) {
       const loggedInUser = localStorage.getItem('js_logged_in_user') || '';
       if (loggedInUser !== lastAuthStr) {
         lastAuthStr = loggedInUser;

@@ -486,7 +486,7 @@ function renderAuthRequired(root: HTMLElement, isExpired = false) {
   root.appendChild(card);
 
   document.getElementById('go-to-auth-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'http://localhost:3000/?view=AUTH' });
+    chrome.tabs.create({ url: 'https://jobshield-ai-web.vercel.app/?view=AUTH' });
   });
 
   document.getElementById('continue-guest-btn')?.addEventListener('click', () => {
@@ -736,7 +736,7 @@ function renderResult(root: HTMLElement) {
   root.appendChild(container);
 
   document.getElementById('view-full-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: `http://localhost:3000/?view=REPORTS&reportData=${reportData}` });
+    chrome.tabs.create({ url: `https://jobshield-ai-web.vercel.app/?view=REPORTS&reportData=${reportData}` });
   });
 
   document.getElementById('scan-again-btn')?.addEventListener('click', () => {
