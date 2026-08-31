@@ -63,5 +63,19 @@
       "48":  "assets/jobshield-icon-48.png",
       "128": "assets/jobshield-icon-128.png"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "*.png",
+        "*.jpg",
+        "*.svg",
+        "*.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

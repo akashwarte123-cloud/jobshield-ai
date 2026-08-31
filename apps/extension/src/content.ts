@@ -136,18 +136,23 @@ function scoreLinkedInDetailCandidate(el: Element): number {
 
 function extractLinkedInTitle(root: Element): string {
   const selectors = [
+    'h2.job-details-jobs-unified-top-card__job-title',
     '.job-details-jobs-unified-top-card__job-title',
     '.jobs-unified-top-card__job-title',
+    'h2.t-24',
+    'h1.t-24',
     'a.job-details-jobs-unified-top-card__job-title-link',
+    '.jobs-details__main-content h2',
     '.jobs-details__main-content h1',
+    '.jobs-unified-top-card h2',
     '.jobs-unified-top-card h1',
+    '.jobs-search-two-pane__details h2',
     '.jobs-search-two-pane__details h1',
-    '.jobs-search__job-details h1',
-    '.jobs-details h1',
+    'h2[class*="title"]',
     'h1[class*="title"]',
+    '[class*="job-title"]',
     'h1',
-    '.job-details-jobs-unified-top-card__job-title-link',
-    '[class*="job-title"]'
+    'h2'
   ];
 
   const invalidTitleKeywords = [
@@ -177,6 +182,26 @@ function extractLinkedInTitle(root: Element): string {
       }
     }
   }
+
+  // Fallback: Parse job title from document.title if DOM selectors return empty
+  try {
+    const pageTitle = document.title || '';
+    if (pageTitle.includes(' hiring ') || pageTitle.includes(' | ') || pageTitle.includes(' - ')) {
+      let candidate = pageTitle;
+      if (candidate.includes(' hiring ')) {
+        candidate = candidate.split(' hiring ')[1] || candidate;
+      }
+      const parts = candidate.split(/[|\-–]/);
+      for (const part of parts) {
+        const clean = part.replace(/in\s+[^,]+,?\s*[^,]*$/i, '').replace(/LinkedIn$/i, '').trim();
+        const lower = clean.toLowerCase();
+        if (clean.length >= 3 && !invalidTitleKeywords.some(kw => lower.includes(kw))) {
+          return clean;
+        }
+      }
+    }
+  } catch (e) {}
+
   return '';
 }
 
