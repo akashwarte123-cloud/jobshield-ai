@@ -111,10 +111,54 @@ export function ReportsPage({ onNavigate }: ReportsPageProps) {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [detailedReport, setDetailedReport] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [rescanningId, setRescanningId] = useState<string | null>(null);
 
   // Export & Toast States
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  const handleRescan = (analysisId: string) => {
+    if (rescanningId) return;
+    setRescanningId(analysisId);
+    triggerToast('Re-scanning job listing details...', 'info');
+
+    api.get(`/analyses/${analysisId}`)
+      .then(res => {
+        const data = res.data as any;
+        if (!res.success || !data || !data.job) {
+          throw new Error('Could not fetch existing job details for re-scan.');
+        }
+        const job = data.job;
+        const payload = {
+          title: job.title || '',
+          company: job.company || '',
+          location: job.location || '',
+          salary: job.salary || '',
+          employment_type: job.employment_type || '',
+          source: job.source || '',
+          source_url: job.source_url || '',
+          description: job.description || ''
+        };
+        return api.post('/analyze', payload);
+      })
+      .then(res => {
+        const data = res.data as any;
+        if (res.success && data) {
+          triggerToast('✓ Re-scan complete! Updated report loaded.', 'success');
+          fetchHistory();
+          const newId = String(data.analysis_id || (data.analysis && data.analysis.id) || analysisId);
+          handleViewReport(newId);
+        } else {
+          triggerToast(res.error?.message || 'Re-scan analysis failed.', 'error');
+        }
+      })
+      .catch(err => {
+        triggerToast(err.message || 'An error occurred while re-scanning.', 'error');
+      })
+      .finally(() => {
+        setRescanningId(null);
+      });
+  };
 
   const triggerToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToast({ message, type });
@@ -496,18 +540,30 @@ export function ReportsPage({ onNavigate }: ReportsPageProps) {
                     View Report →
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onNavigate?.('ANALYZER'); }}
+                    onClick={(e) => { e.stopPropagation(); handleRescan(item.id); }}
+                    disabled={rescanningId === item.id}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       padding: '8px 14px', borderRadius: 'var(--radius-btn)',
                       background: 'var(--interactive-dim)', border: '1px solid var(--interactive-border)',
-                      color: 'var(--interactive)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+                      color: 'var(--interactive)', fontSize: 12, fontWeight: 600,
+                      cursor: rescanningId === item.id ? 'not-allowed' : 'pointer',
+                      fontFamily: 'var(--font)',
+                      opacity: rescanningId === item.id ? 0.7 : 1,
                       transition: 'transform var(--transition-normal), background-color var(--transition-normal)',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.background = 'var(--interactive)'; e.currentTarget.style.color = '#030712'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'var(--interactive-dim)'; e.currentTarget.style.color = 'var(--interactive)'; }}
+                    onMouseEnter={e => { if (rescanningId !== item.id) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.background = 'var(--interactive)'; e.currentTarget.style.color = '#030712'; } }}
+                    onMouseLeave={e => { if (rescanningId !== item.id) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'var(--interactive-dim)'; e.currentTarget.style.color = 'var(--interactive)'; } }}
                   >
-                    Scan Again ↻
+                    {rescanningId === item.id ? (
+                      <>
+                        <RefreshCw size={12} className="spin" /> Scanning...
+                      </>
+                    ) : (
+                      <>
+                        Scan Again ↻
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
