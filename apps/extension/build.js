@@ -35,7 +35,7 @@ function processFile(distName, rootName) {
     const rawApiUrl = process.env.EXTENSION_API_URL || process.env.VITE_API_URL;
     const targetApiUrl = (rawApiUrl && rawApiUrl.trim()) 
       ? rawApiUrl.trim() 
-      : (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:8000/api/v1');
+      : 'https://jobshield-ai-backend-6v0b.onrender.com/api/v1';
 
     content = content.replace(/__JOBSHIELD_API_URL__/g, targetApiUrl.replace(/\/+$/, ''));
 

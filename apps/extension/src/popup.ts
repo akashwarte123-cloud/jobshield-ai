@@ -826,7 +826,7 @@ function renderSettings(root: HTMLElement) {
   });
 
   document.getElementById('dashboard-link-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'http://localhost:3000/' });
+    chrome.tabs.create({ url: 'https://jobshield-ai-web.vercel.app/' });
   });
 }
 

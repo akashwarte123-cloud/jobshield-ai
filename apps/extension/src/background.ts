@@ -118,7 +118,10 @@ try {
             email: request.payload.recruiter || ''
           };
 
-          const apiBaseUrl = '__JOBSHIELD_API_URL__';
+          let apiBaseUrl = '__JOBSHIELD_API_URL__';
+          if (!apiBaseUrl || apiBaseUrl.startsWith('/') || apiBaseUrl === '__JOBSHIELD_API_URL__') {
+            apiBaseUrl = 'https://jobshield-ai-backend-6v0b.onrender.com/api/v1';
+          }
           const targetEndpoint = `${apiBaseUrl.replace(/\/+$/, '')}/analyze`;
 
           const res = await fetch(targetEndpoint, {
