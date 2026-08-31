@@ -10,10 +10,11 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:extension": "npm run build --workspace=apps/extension",
+    "build": "npm run build:all",
     "build:shared": "npm run build --workspace=packages/shared",
     "build:web": "npm run build --workspace=apps/web",
     "build:extension": "npm run build --workspace=apps/extension",
-    "build:all": "npm run build:shared && npm run build:web && npm run build:extension",
+    "build:all": "npm run build:shared && npm run build:extension && npm run build:web",
     "typecheck": "tsc --build tsconfig.json",
     "lint": "eslint \"{apps,packages}/**/*.{ts,tsx}\"",
     "format": "prettier --write \"{apps,packages,docker}/**/*.{ts,tsx,json,md,yml}\""
