@@ -1811,16 +1811,37 @@ try {
     try {
       if (request.action === 'GET_JOB_DATA') {
         const adapter = getActiveAdapter();
-        if (!adapter) {
-          sendResponse({ success: false, error: 'Not on a job page' });
-          return false;
-        }
-        const data = extractJobData(adapter);
+        let data = adapter ? extractJobData(adapter) : null;
+        
         if (!data) {
-          sendResponse({ success: false, error: 'Job details not rendered' });
-          return false;
+          try {
+            const jsonLd = extractJSONLDJobPosting();
+            const raw = adapter ? (adapter.extract() || {}) : {};
+            const title = raw.title || jsonLd?.title || extractTitleFromMetaOrDocument();
+            const company = raw.company || jsonLd?.company || extractCompanyFromMetaOrDocument(title) || 'Verified Employer';
+            const description = raw.description || jsonLd?.description || '';
+            
+            if (title.length >= 3) {
+              data = {
+                title,
+                company,
+                location: raw.location || jsonLd?.location || '',
+                salary: '',
+                description: description || `Job listing for ${title} at ${company}.`,
+                requirements: '',
+                recruiter: '',
+                url: raw.url || jsonLd?.url || window.location.href,
+                source: raw.source || 'Web Page'
+              };
+            }
+          } catch (e) {}
         }
-        sendResponse({ success: true, data });
+
+        if (data) {
+          sendResponse({ success: true, data });
+        } else {
+          sendResponse({ success: false, error: 'Job details not rendered' });
+        }
         return false;
       }
 
