@@ -105,20 +105,16 @@ export class ScamClassifier {
 
     let score = hybridRes.compositeRiskScore;
     
-    // Elevate score based on critical/high red flags to avoid logical contradictions
+    // Elevate score based on critical red flags to avoid logical contradictions
     let hasCritical = false;
-    let hasHigh = false;
     redFlags.forEach(flag => {
       if (flag.severity === 'CRITICAL') {
         hasCritical = true;
       }
-      if (flag.severity === 'HIGH') {
-        hasHigh = true;
-      }
     });
 
-    if (hasCritical || hasHigh) {
-      score = Math.max(score, 75);
+    if (hasCritical) {
+      score = Math.max(score, 65);
     }
 
     let verdict: 'SAFE' | 'CAUTION' | 'DANGER' = 'SAFE';
