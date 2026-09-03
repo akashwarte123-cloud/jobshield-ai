@@ -255,14 +255,18 @@ function extractLinkedInDescription(root: Element): string {
     '.jobs-description',
     '[class*="jobs-description"]',
     '[class*="job-description"]',
-    '[class*="job-desc"]'
+    '[class*="job-desc"]',
+    '[class*="description-content"]',
+    '#job-description-text',
+    '.description__text',
+    'article',
+    'main'
   ];
 
   for (const selector of selectors) {
     const elements = root.querySelectorAll(selector);
     for (const el of Array.from(elements)) {
-      if (isVisibleElement(el)) {
-        if (el === document.body) continue;
+      if (isVisibleElement(el) && el !== document.body) {
         const text = el.textContent?.trim() || '';
         if (text.length >= 100) {
           return text;
@@ -271,19 +275,15 @@ function extractLinkedInDescription(root: Element): string {
     }
   }
 
-  // NEVER manufacture a job description from the entire page if root is document.body
-  if (root === document.body) {
-    return '';
-  }
-
-  // Robust fallback for specific detail containers only (NOT document.body):
+  // Fallback: search for child div/section with description content (NOT document.body itself)
   let longestText = '';
-  const allDivs = root.querySelectorAll('div, section');
+  const allDivs = root.querySelectorAll('div, section, article');
   for (const div of Array.from(allDivs)) {
     if (isVisibleElement(div)) {
       const text = div.textContent?.trim() || '';
       if (text.length > longestText.length && text.length >= 100 && div !== document.body && !div.id.includes('jobshield')) {
-        if (text.length < (document.body.textContent?.length || 0) * 0.8) {
+        const bodyLength = document.body.textContent?.length || 0;
+        if (bodyLength === 0 || text.length < bodyLength * 0.75) {
           longestText = text;
         }
       }
@@ -313,6 +313,7 @@ const LinkedInAdapter = {
 
     // Expanded detail-pane candidate selectors including modern LinkedIn SPA attributes
     const candidateList = Array.from(new Set(document.querySelectorAll(
+      '.scaffold-layout__main, ' +
       '[data-view-name*="job"], ' +
       '[data-view-name*="job-details"], ' +
       '[data-test-job-details], ' +
@@ -352,7 +353,7 @@ const LinkedInAdapter = {
       }
     }
 
-    if (bestCandidate && bestScore >= 50) {
+    if (bestCandidate && bestScore >= 25) {
       container = bestCandidate;
       if (lastDetectionState !== 'job') {
         lastDetectionState = 'job';
