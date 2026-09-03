@@ -679,6 +679,11 @@ function renderResult(root: HTMLElement) {
     padding: 16px;
     text-align: center;
   `;
+  const rawConfidence = Number(scanResult.confidence);
+  const confidenceText = Number.isFinite(rawConfidence)
+    ? `AI confidence ${(rawConfidence <= 1.0 ? rawConfidence * 100 : rawConfidence).toFixed(1)}%`
+    : 'AI confidence N/A';
+
   scoreCard.innerHTML = `
     <div style="font-size: 13px; font-weight: 800; color: ${color}; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px;">
       ${levelLabel}
@@ -687,7 +692,7 @@ function renderResult(root: HTMLElement) {
       ${scanResult.score} <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">/ 100</span>
     </div>
     <div style="font-size: 11.5px; color: var(--text-secondary); font-weight: 500;">
-      ${scanResult.confidence !== null && scanResult.confidence !== undefined ? `AI confidence ${scanResult.confidence}%` : 'AI confidence N/A'}
+      ${confidenceText}
     </div>
   `;
   container.appendChild(scoreCard);
