@@ -134,21 +134,29 @@ async function checkAuth() {
   });
 }
 
-async function detectActiveTabJob() {
+async function detectActiveTabJob(retries = 4) {
   return new Promise<void>((resolve) => {
     try {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        try {
-          const activeTab = tabs[0];
-          if (!activeTab || !activeTab.id) {
-            resolve();
-            return;
-          }
-          const tabId = activeTab.id;
+        const activeTab = tabs[0];
+        if (!activeTab || !activeTab.id) {
+          resolve();
+          return;
+        }
+        const tabId = activeTab.id;
 
+        const attempt = (remaining: number) => {
           chrome.tabs.sendMessage(tabId, { action: 'GET_JOB_DATA' }, (response) => {
-            if (chrome.runtime.lastError) {
-              // Try auto-injecting content.js
+            if (!chrome.runtime.lastError && response && response.success && response.data && response.data.description) {
+              currentJob = response.data;
+              resolve();
+              return;
+            }
+
+            if (remaining > 0) {
+              setTimeout(() => attempt(remaining - 1), 250);
+            } else {
+              // Try script injection as final fallback
               try {
                 chrome.scripting.executeScript({
                   target: { tabId },
@@ -162,7 +170,7 @@ async function detectActiveTabJob() {
                         }
                         resolve();
                       });
-                    }, 300);
+                    }, 250);
                   } else {
                     resolve();
                   }
@@ -170,18 +178,11 @@ async function detectActiveTabJob() {
               } catch (e) {
                 resolve();
               }
-              return;
             }
-            try {
-              if (response && response.success && response.data && response.data.description) {
-                currentJob = response.data;
-              }
-            } catch (e) {}
-            resolve();
           });
-        } catch (e) {
-          resolve();
-        }
+        };
+
+        attempt(retries);
       });
     } catch (e) {
       resolve();

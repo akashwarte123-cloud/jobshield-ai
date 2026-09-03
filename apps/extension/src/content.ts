@@ -293,6 +293,21 @@ function extractLinkedInDescription(root: Element): string {
 }
 
 // Site specific extraction adapters
+function extractLinkedInJobId(): string | null {
+  try {
+    const url = new URL(window.location.href);
+    const paramId = url.searchParams.get('currentJobId') || 
+                    url.searchParams.get('originToLandingJobPostings') ||
+                    url.searchParams.get('jobId') ||
+                    url.searchParams.get('jobPostingId');
+    if (paramId && /^\d+$/.test(paramId)) return paramId;
+
+    const match = url.pathname.match(/\/jobs\/(?:view|search-results|collections)\/(\d+)/);
+    if (match && match[1]) return match[1];
+  } catch (e) {}
+  return null;
+}
+
 const LinkedInAdapter = {
   detect: (urlString: string) => {
     try {
@@ -324,7 +339,66 @@ const LinkedInAdapter = {
       };
     }
 
+    const jobId = extractLinkedInJobId();
     let container: Element | null = null;
+
+    // Option 1 & 3: Selected-Job DOM Anchoring using jobId reference
+    if (jobId) {
+      const anchors = Array.from(document.querySelectorAll(
+        `[data-job-id="${jobId}"], ` +
+        `a[href*="${jobId}"], ` +
+        `[data-entity-hovercard-id*="${jobId}"], ` +
+        `[id*="${jobId}"]`
+      ));
+
+      for (const anchor of anchors) {
+        if (anchor === document.body) continue;
+        const parent = anchor.closest(
+          '.scaffold-layout__main, ' +
+          '.jobs-search-two-pane__details, ' +
+          '.jobs-search__job-details--container, ' +
+          '.jobs-search-results-list__detail-single-pane, ' +
+          '.jobs-details, ' +
+          '.job-view-layout, ' +
+          'section[role="main"], ' +
+          'div[role="main"], ' +
+          'main, article'
+        );
+        if (parent && parent !== document.body && isVisibleElement(parent)) {
+          container = parent;
+          break;
+        }
+      }
+    }
+
+    // Option 2 & 3: Semantic & Geometry Fallback (Ignore left search results list, focus on right detail pane)
+    if (!container) {
+      const candidates = Array.from(document.querySelectorAll(
+        '.scaffold-layout__main, ' +
+        '.jobs-search-two-pane__details, ' +
+        '.jobs-search__job-details--container, ' +
+        '.jobs-details, ' +
+        '.job-view-layout, ' +
+        'section[role="main"], ' +
+        'div[role="main"], ' +
+        'main, article'
+      ));
+
+      for (const cand of candidates) {
+        if (cand === document.body) continue;
+        const rect = cand.getBoundingClientRect();
+        // Geometry filter: skip narrow left-side list items
+        if (rect.left < window.innerWidth / 4 && rect.width < 400) continue;
+        if (isVisibleElement(cand)) {
+          const t = extractLinkedInTitle(cand);
+          const d = extractLinkedInDescription(cand);
+          if (t.length >= 3 && d.length >= 100) {
+            container = cand;
+            break;
+          }
+        }
+      }
+    }
 
     const isSearchResults =
       window.location.pathname.includes('/jobs/search-results') ||
@@ -332,105 +406,51 @@ const LinkedInAdapter = {
       window.location.pathname.includes('/jobs/collections') ||
       window.location.search.includes('currentJobId=') ||
       window.location.search.includes('originToLandingJobPostings=') ||
-      window.location.search.includes('jobId=') ||
-      window.location.search.includes('jobPostingId=');
+      window.location.search.includes('jobId=');
 
-    // Expanded detail-pane candidate selectors including modern LinkedIn SPA attributes
-    const candidateList = Array.from(new Set(document.querySelectorAll(
-      '.scaffold-layout__main, ' +
-      '[data-view-name*="job"], ' +
-      '[data-view-name*="job-details"], ' +
-      '[data-test-job-details], ' +
-      '[data-testid*="job-detail"], ' +
-      '[aria-label*="Job details"], ' +
-      '[aria-label*="Job Details"], ' +
-      'section[role="main"], ' +
-      'div[role="main"], ' +
-      '.jobs-search-two-pane__details, ' +
-      '.jobs-search__job-details--container, ' +
-      '.jobs-search-results-list__detail-single-pane, ' +
-      '.jobs-details, ' +
-      '.jobs-details__main-content, ' +
-      '.job-view-layout, ' +
-      '[class*="jobs-search__job-details"], ' +
-      '[class*="jobs-details"], ' +
-      '[class*="detail-pane"], ' +
-      '[class*="details-pane"], ' +
-      '[class*="job-details"], ' +
-      '#main [class*="detail"], ' +
-      '#main [class*="pane"], ' +
-      '#main [class*="content"], ' +
-      '.jobs-search-two-pane__right-column, ' +
-      '.two-pane-layout__right-column, ' +
-      '[class*="two-pane"] [class*="right"]'
-    )));
-
-    let bestScore = 0;
-    let bestCandidate: Element | null = null;
-
-    for (const cand of candidateList) {
-      if (cand === document.body) continue;
-      const score = scoreLinkedInDetailCandidate(cand);
-      if (score > bestScore) {
-        bestScore = score;
-        bestCandidate = cand;
-      }
+    // Strict Rule: document.body is strictly FORBIDDEN for search-result SPA pages
+    if (!container && !isSearchResults) {
+      container = document.body;
     }
 
-    if (bestCandidate && bestScore >= 15) {
-      container = bestCandidate;
-      if (lastDetectionState !== 'job') {
-        lastDetectionState = 'job';
-        console.log(`[JobShield] LinkedIn detailPane resolved: true (Score: ${bestScore}, SearchMode: ${isSearchResults})`);
+    if (!container) {
+      if (lastDetectionState !== 'waiting') {
+        lastDetectionState = 'waiting';
+        console.log("[JobShield] LinkedIn detail pane not ready — waiting for selected job");
       }
-    } else {
-      // Fallback: search main layout containers or document.body
-      container = document.querySelector('.scaffold-layout__main') ||
-                  document.querySelector('main') ||
-                  document.querySelector('article') ||
-                  document.querySelector('#main') ||
-                  document.body;
-      if (lastDetectionState !== 'job') {
-        lastDetectionState = 'job';
-        console.log("[JobShield] LinkedIn container fallback mode active");
-      }
+      return {
+        title: '',
+        company: '',
+        location: '',
+        description: '',
+        url: window.location.href,
+        source: 'LinkedIn'
+      };
     }
 
     // Parse location from container
-    const locationEl = container ? container.querySelector(
+    const locationEl = container.querySelector(
       '.job-details-jobs-unified-top-card__bullet, ' +
       '.jobs-unified-top-card__bullet, ' +
       '[class*="company-wrapper"] [class*="bullet"], ' +
       '[class*="bullet"], ' +
       '.jobs-details__main-content [class*="bullet"]'
-    ) : null;
+    );
 
-    // Construct canonical URL using currentJobId param
+    // Canonical URL
     let jobUrl = window.location.href;
-    try {
-      const url = new URL(window.location.href);
-      const currentJobId = url.searchParams.get('currentJobId') || 
-                           url.searchParams.get('originToLandingJobPostings') ||
-                           url.searchParams.get('jobId') ||
-                           url.searchParams.get('jobPostingId');
-      if (currentJobId) {
-        jobUrl = `https://www.linkedin.com/jobs/view/${currentJobId}`;
-      } else {
-        const directViewMatch = url.pathname.match(/\/jobs\/view\/(\d+)/);
-        if (directViewMatch) {
-          jobUrl = `https://www.linkedin.com/jobs/view/${directViewMatch[1]}`;
-        }
-      }
-    } catch (e) {}
+    if (jobId) {
+      jobUrl = `https://www.linkedin.com/jobs/view/${jobId}`;
+    }
 
-    const title = container ? extractLinkedInTitle(container) : '';
-    const company = container ? extractLinkedInCompany(container) : '';
-    const description = container ? extractLinkedInDescription(container) : '';
+    const title = extractLinkedInTitle(container);
+    const company = extractLinkedInCompany(container);
+    const description = extractLinkedInDescription(container);
 
-    console.log(`[JobShield] LinkedIn candidate evaluated (Container tag: ${container?.tagName || 'none'})`);
-    console.log(`[JobShield] Job title extracted: "${title}"`);
-    console.log(`[JobShield] Company extracted: "${company}"`);
-    console.log(`[JobShield] Description extracted length: ${description.length} chars`);
+    if (lastDetectionState !== 'job') {
+      lastDetectionState = 'job';
+      console.log(`[JobShield] LinkedIn job extraction anchored (Title: "${title}", Container: ${container.tagName})`);
+    }
 
     return {
       title,
