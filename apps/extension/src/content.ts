@@ -102,13 +102,21 @@ function scoreLinkedInDetailCandidate(el: Element): number {
     score += 15;
   }
 
-  // +20 known LinkedIn detail class
+  // +20 known LinkedIn detail class or data attributes
+  const attrCheck = 
+    el.hasAttribute('data-test-job-details') ||
+    (el.getAttribute('data-view-name') || '').includes('job') ||
+    (el.getAttribute('data-testid') || '').includes('job-detail') ||
+    (el.getAttribute('aria-label') || '').toLowerCase().includes('job detail');
+
   const isKnownClass = 
     className.includes('jobs-search-two-pane__details') ||
     className.includes('jobs-search__job-details--container') ||
     className.includes('jobs-search-results-list__detail-single-pane') ||
     className.includes('jobs-details') ||
-    className.includes('jobs-search__job-details');
+    className.includes('job-view-layout') ||
+    className.includes('jobs-search__job-details') ||
+    attrCheck;
   if (isKnownClass) {
     score += 20;
   }
@@ -246,11 +254,8 @@ function extractLinkedInDescription(root: Element): string {
     '.jobs-box__html-content',
     '.jobs-description',
     '[class*="jobs-description"]',
-    '[class*="description"]',
-    '[class*="job-desc"]',
     '[class*="job-description"]',
-    'article',
-    'main'
+    '[class*="job-desc"]'
   ];
 
   for (const selector of selectors) {
@@ -266,10 +271,14 @@ function extractLinkedInDescription(root: Element): string {
     }
   }
 
-  // Robust fallback: if none of the description selectors match or contain enough text,
-  // find the child element with the longest visible text content that is not document.body.
+  // NEVER manufacture a job description from the entire page if root is document.body
+  if (root === document.body) {
+    return '';
+  }
+
+  // Robust fallback for specific detail containers only (NOT document.body):
   let longestText = '';
-  const allDivs = root.querySelectorAll('div, section, article');
+  const allDivs = root.querySelectorAll('div, section');
   for (const div of Array.from(allDivs)) {
     if (isVisibleElement(div)) {
       const text = div.textContent?.trim() || '';
@@ -296,14 +305,28 @@ const LinkedInAdapter = {
   },
   extract: (): Partial<JobData> => {
     let container: Element | null = null;
-    
-    // Robust layout detection: if a right-side job details column/pane exists, use it.
-    // Otherwise, fall back to document.body (direct single-job view page).
+
+    const isSearchResults =
+      window.location.pathname.includes('/jobs/search-results') ||
+      window.location.pathname.includes('/jobs/search') ||
+      window.location.search.includes('currentJobId=');
+
+    // Expanded detail-pane candidate selectors including modern LinkedIn SPA attributes
     const candidateList = Array.from(new Set(document.querySelectorAll(
+      '[data-view-name*="job"], ' +
+      '[data-view-name*="job-details"], ' +
+      '[data-test-job-details], ' +
+      '[data-testid*="job-detail"], ' +
+      '[aria-label*="Job details"], ' +
+      '[aria-label*="Job Details"], ' +
+      'section[role="main"], ' +
+      'div[role="main"], ' +
       '.jobs-search-two-pane__details, ' +
       '.jobs-search__job-details--container, ' +
       '.jobs-search-results-list__detail-single-pane, ' +
       '.jobs-details, ' +
+      '.jobs-details__main-content, ' +
+      '.job-view-layout, ' +
       '[class*="jobs-search__job-details"], ' +
       '[class*="jobs-details"], ' +
       '[class*="detail-pane"], ' +
@@ -335,13 +358,30 @@ const LinkedInAdapter = {
         lastDetectionState = 'job';
         console.log(`[JobShield] LinkedIn detailPane resolved: true (Score: ${bestScore})`);
       }
-    } else {
-      // Fallback to document.body (direct job view)
+    } else if (!isSearchResults) {
+      // Direct /jobs/view/<id> pages can safely use document.body
       container = document.body;
       if (lastDetectionState !== 'job') {
         lastDetectionState = 'job';
-        console.log("[JobShield] LinkedIn direct view extraction mode (using document.body)");
+        console.log("[JobShield] LinkedIn direct view extraction mode");
       }
+    } else {
+      // Search-results SPA: NEVER analyze document.body. Return empty payload so extraction retries.
+      if (lastDetectionState !== 'waiting') {
+        lastDetectionState = 'waiting';
+        console.log("[JobShield] LinkedIn detail pane not ready — waiting for selected job");
+      }
+      return {
+        title: '',
+        company: '',
+        location: '',
+        salary: '',
+        description: '',
+        requirements: '',
+        recruiter: '',
+        url: window.location.href,
+        source: 'LinkedIn'
+      };
     }
 
     // Parse location from container
@@ -1545,7 +1585,7 @@ const MAX_RETRIES = 12; // Polling dynamic DOM details up to 6 seconds
 
 let detailObserver: MutationObserver | null = null;
 let isTerminated = false;
-let lastDetectionState: 'none' | 'job' = 'none';
+let lastDetectionState: 'none' | 'job' | 'waiting' = 'none';
 
 function isExtensionContextValid(): boolean {
   if (isTerminated) return false;
