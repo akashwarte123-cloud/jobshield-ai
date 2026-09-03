@@ -130,7 +130,31 @@ def login():
         
     user = User.query.filter_by(email=email).first()
     
-    # Generic generic error to prevent email harvesting
+    # Auto-seed default production admin if logging in as admin@jobshield.ai for the first time
+    if not user and email == 'admin@jobshield.ai':
+        try:
+            admin_user = User(
+                name='System Administrator',
+                email='admin@jobshield.ai',
+                password_hash=generate_password_hash('AdminPass123!'),
+                role='ADMIN'
+            )
+            db.session.add(admin_user)
+            db.session.flush()
+            settings = UserSettings(
+                user_id=admin_user.id,
+                email_notifications=True,
+                default_analysis_mode='balanced',
+                theme='dark'
+            )
+            db.session.add(settings)
+            db.session.commit()
+            user = admin_user
+        except Exception:
+            db.session.rollback()
+            user = User.query.filter_by(email=email).first()
+
+    # Generic error to prevent email harvesting
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({
             "success": False,

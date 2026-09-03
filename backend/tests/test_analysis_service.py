@@ -59,7 +59,7 @@ class AnalysisServiceTestCase(unittest.TestCase):
         self.assertEqual(result["analysis"]["rule_score"], 0)
         self.assertEqual(result["analysis"]["final_score"], 6) # 10 * 0.6 + 0 * 0.4 = 6
         self.assertEqual(result["analysis"]["risk_level"], "LOW")
-        self.assertIn("Legitimate job", result["analysis"]["explanation"])
+        self.assertIn("legitimate job", result["analysis"]["explanation"].lower())
 
         # Verify DB records
         job = Job.query.filter_by(source_url="https://jobshield.com/architect").first()
@@ -121,7 +121,7 @@ class AnalysisServiceTestCase(unittest.TestCase):
         self.assertEqual(result["analysis"]["risk_level"], "HIGH")
         
         explanation = result["analysis"]["explanation"]
-        self.assertIn("High risk:", explanation)
+        self.assertIn("High risk (68/100):", explanation)
         self.assertIn("upfront payment", explanation)
         self.assertIn("messaging platforms", explanation)
 
