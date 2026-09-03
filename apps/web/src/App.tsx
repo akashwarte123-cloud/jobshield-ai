@@ -925,13 +925,14 @@ export default function App() {
                 )}
                 {currentPath === '/app/profile' && <ProfilePage />}
                 {currentPath === '/app/help' && <HelpPage />}
+                {currentPath.startsWith('/admin') && <ForbiddenPage onReturn={() => navigate('/app/home')} />}
               </>
             )}
 
             {/* Admin Pages */}
             {role === 'ADMIN' && (
               <>
-                {currentPath === '/admin/dashboard' && <AdminPanelPage />}
+                {(currentPath === '/admin' || currentPath === '/admin/' || currentPath === '/app/admin' || currentPath === '/admin/dashboard') && <AdminPanelPage />}
                 {currentPath === '/admin/users' && <UsersPage />}
                 {currentPath === '/admin/analyses' && <AdminAnalysesPage />}
                 {currentPath === '/admin/jobs' && <AdminJobsPage />}
