@@ -58,22 +58,27 @@ def get_dashboard_summary():
     # ── Job stats ────────────────────────────────────────────────────────────
     total_jobs = db.session.query(func.count(Job.id)).scalar() or 0
 
-    # ── Weekly trends (last 7 days, one query) ───────────────────────────────
+    # ── Weekly trends (last 7 days, database agnostic) ───────────────────────
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
-    # SQLite: strftime('%Y-%m-%d', analyzed_at) for day grouping
-    from sqlalchemy import text as sql_text
-    weekly_rows = (
-        db.session.execute(
-            sql_text(
-                "SELECT strftime('%Y-%m-%d', analyzed_at) AS day, COUNT(*) AS cnt "
-                "FROM analyses "
-                "WHERE analyzed_at >= :cutoff "
-                "GROUP BY day ORDER BY day ASC"
-            ),
-            {'cutoff': seven_days_ago.isoformat()}
-        ).fetchall()
+    recent_dates = (
+        db.session.query(Analysis.analyzed_at)
+        .filter(Analysis.analyzed_at >= seven_days_ago)
+        .all()
     )
-    weekly_trends = [{'date': row[0], 'count': row[1]} for row in weekly_rows]
+    counts_by_day = {}
+    for i in range(7):
+        day_str = (datetime.now(timezone.utc) - timedelta(days=6 - i)).strftime('%Y-%m-%d')
+        counts_by_day[day_str] = 0
+
+    for (analyzed_at,) in recent_dates:
+        if analyzed_at:
+            day_str = analyzed_at.strftime('%Y-%m-%d')
+            if day_str in counts_by_day:
+                counts_by_day[day_str] += 1
+            else:
+                counts_by_day[day_str] = 1
+
+    weekly_trends = [{'date': d, 'count': c} for d, c in sorted(counts_by_day.items())]
 
     return {
         'users': {
