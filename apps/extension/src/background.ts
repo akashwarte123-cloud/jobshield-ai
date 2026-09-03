@@ -88,6 +88,7 @@ try {
       const { title, company, description, url } = request.payload;
       const forceRefresh = request.forceRefresh || false;
       const cacheKey = getCacheKey(request.payload);
+      const originTabId = _sender?.tab?.id;
 
       if (!forceRefresh && cache[cacheKey]) {
         sendResponse({ success: true, status: 'cached' });
@@ -107,7 +108,7 @@ try {
         let timeoutId: any = null;
         try {
           const controller = new AbortController();
-          timeoutId = setTimeout(() => controller.abort(), 8000);
+          timeoutId = setTimeout(() => controller.abort(), 25000);
 
           const headers: Record<string, string> = {
             'Content-Type': 'application/json'
@@ -149,7 +150,7 @@ try {
               chrome.storage.local.remove(['authenticatedUser']);
             } catch (e) {}
             // Reset in-page badge to Not Analyzed state
-            sendBadgeUpdate(cacheKey, undefined, undefined, false);
+            sendBadgeUpdate(cacheKey, undefined, undefined, false, originTabId);
             try {
               chrome.runtime.sendMessage({
                 action: 'SCAN_RESULT',
@@ -164,7 +165,7 @@ try {
 
           if (res.status === 400) {
             // Reset in-page badge to Not Analyzed state
-            sendBadgeUpdate(cacheKey, undefined, undefined, false);
+            sendBadgeUpdate(cacheKey, undefined, undefined, false, originTabId);
             try {
               chrome.runtime.sendMessage({
                 action: 'SCAN_RESULT',
@@ -179,7 +180,7 @@ try {
 
           if (res.status === 503) {
             // Reset in-page badge to Not Analyzed state
-            sendBadgeUpdate(cacheKey, undefined, undefined, false);
+            sendBadgeUpdate(cacheKey, undefined, undefined, false, originTabId);
             try {
               chrome.runtime.sendMessage({
                 action: 'SCAN_RESULT',
@@ -194,7 +195,7 @@ try {
 
           if (res.status >= 500) {
             // Reset in-page badge to Not Analyzed state
-            sendBadgeUpdate(cacheKey, undefined, undefined, false);
+            sendBadgeUpdate(cacheKey, undefined, undefined, false, originTabId);
             try {
               chrome.runtime.sendMessage({
                 action: 'SCAN_RESULT',
@@ -259,7 +260,7 @@ try {
             } catch (e) {}
 
             // Send injection badge command to page tab
-            sendBadgeUpdate(cacheKey, entry.score, entry.level, entry.isOffline);
+            sendBadgeUpdate(cacheKey, entry.score, entry.level, entry.isOffline, originTabId);
           } else {
             try {
               chrome.runtime.sendMessage({ action: 'SCAN_RESULT', success: false, error: (response.error && response.error.message) || 'Failed to scan', cacheKey });
@@ -277,7 +278,7 @@ try {
           } catch (e) {}
 
           // Send injection badge command to page tab
-          sendBadgeUpdate(cacheKey, mockResult.score, mockResult.level, mockResult.isOffline);
+          sendBadgeUpdate(cacheKey, mockResult.score, mockResult.level, mockResult.isOffline, originTabId);
         }
       })();
 
@@ -291,33 +292,42 @@ try {
   // ignore
 }
 
-function sendBadgeUpdate(cacheKey: string, score: number | null | undefined, level: string | undefined, isOffline: boolean | undefined) {
+function sendBadgeUpdate(cacheKey: string, score: number | null | undefined, level: string | undefined, isOffline: boolean | undefined, targetTabId?: number) {
+  const msg = { action: 'INJECT_BADGE', score, level, isOffline, jobKey: cacheKey };
+  
+  const attemptSend = (tabId: number) => {
+    try {
+      chrome.tabs.sendMessage(tabId, msg, () => {
+        if (chrome.runtime.lastError) {
+          try {
+            chrome.scripting.executeScript({
+              target: { tabId },
+              files: ['content.js']
+            }, () => {
+              if (!chrome.runtime.lastError) {
+                setTimeout(() => {
+                  chrome.tabs.sendMessage(tabId, msg, () => {
+                    if (chrome.runtime.lastError) {}
+                  });
+                }, 300);
+              }
+            });
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+  };
+
+  if (targetTabId) {
+    attemptSend(targetTabId);
+    return;
+  }
+
   try {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       if (activeTab && activeTab.id) {
-        const tabId = activeTab.id;
-        const msg = { action: 'INJECT_BADGE', score, level, isOffline, jobKey: cacheKey };
-        
-        chrome.tabs.sendMessage(tabId, msg, () => {
-          if (chrome.runtime.lastError) {
-            // Auto-inject content.js if context was invalidated or missing
-            try {
-              chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-              }, () => {
-                if (!chrome.runtime.lastError) {
-                  setTimeout(() => {
-                    chrome.tabs.sendMessage(tabId, msg, () => {
-                      if (chrome.runtime.lastError) {}
-                    });
-                  }, 300);
-                }
-              });
-            } catch (e) {}
-          }
-        });
+        attemptSend(activeTab.id);
       }
     });
   } catch (e) {}
