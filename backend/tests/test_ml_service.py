@@ -96,27 +96,27 @@ class MLServiceTestCase(unittest.TestCase):
 
     @patch('urllib.request.urlopen')
     def test_timeout_exception(self, mock_urlopen):
-        """Test timeout raises custom MLIntegrationError."""
+        """Test timeout gracefully falls back to Python RuleEngine."""
         mock_urlopen.side_effect = TimeoutError("Connection timed out")
         
         job_data = {"title": "Software Engineer", "description": "Job details."}
-        with self.assertRaises(MLIntegrationError) as context:
-            MLService.predict(job_data)
-        self.assertIn("timed out", str(context.exception))
+        res = MLService.predict(job_data)
+        self.assertEqual(res["model_version"], "python-rule-engine-v1-fallback")
+        self.assertIn("prediction", res)
 
     @patch('urllib.request.urlopen')
     def test_connection_refused_exception(self, mock_urlopen):
-        """Test connection refused / address error raises custom MLIntegrationError."""
+        """Test connection refused gracefully falls back to Python RuleEngine."""
         mock_urlopen.side_effect = URLError("Connection refused")
         
         job_data = {"title": "Software Engineer", "description": "Job details."}
-        with self.assertRaises(MLIntegrationError) as context:
-            MLService.predict(job_data)
-        self.assertIn("Connection refused or address resolution failure", str(context.exception))
+        res = MLService.predict(job_data)
+        self.assertEqual(res["model_version"], "python-rule-engine-v1-fallback")
+        self.assertIn("prediction", res)
 
     @patch('urllib.request.urlopen')
     def test_http_error_exception(self, mock_urlopen):
-        """Test HTTP error status responses are handled raising custom MLIntegrationError."""
+        """Test HTTP error status responses gracefully fall back to Python RuleEngine."""
         fp = BytesIO(json.dumps({"error": "Bad request format parameters"}).encode('utf-8'))
         mock_urlopen.side_effect = HTTPError(
             url='http://127.0.0.1:5000/api/v1/analyze',
@@ -127,27 +127,26 @@ class MLServiceTestCase(unittest.TestCase):
         )
         
         job_data = {"title": "Software Engineer", "description": "Job details."}
-        with self.assertRaises(MLIntegrationError) as context:
-            MLService.predict(job_data)
-        self.assertIn("HTTP error 400", str(context.exception))
-        self.assertIn("Bad request format parameters", str(context.exception))
+        res = MLService.predict(job_data)
+        self.assertEqual(res["model_version"], "python-rule-engine-v1-fallback")
+        self.assertIn("prediction", res)
 
     @patch('urllib.request.urlopen')
     def test_malformed_json_response(self, mock_urlopen):
-        """Test non-JSON payloads raise custom MLIntegrationError."""
+        """Test non-JSON payloads gracefully fall back to Python RuleEngine."""
         mock_response = MagicMock()
         mock_response.status = 200
         mock_response.read.return_value = b"<html>Internal Server Error</html>"
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
         job_data = {"title": "Software Engineer", "description": "Job details."}
-        with self.assertRaises(MLIntegrationError) as context:
-            MLService.predict(job_data)
-        self.assertIn("parsed as valid JSON", str(context.exception))
+        res = MLService.predict(job_data)
+        self.assertEqual(res["model_version"], "python-rule-engine-v1-fallback")
+        self.assertIn("prediction", res)
 
     @patch('urllib.request.urlopen')
     def test_missing_critical_keys_in_response(self, mock_urlopen):
-        """Test missing critical analysis keys in response triggers custom error."""
+        """Test missing critical analysis keys in response gracefully falls back to Python RuleEngine."""
         mock_response = MagicMock()
         mock_response.status = 200
         mock_response.read.return_value = json.dumps({
@@ -162,9 +161,9 @@ class MLServiceTestCase(unittest.TestCase):
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
         job_data = {"title": "Software Engineer", "description": "Job details."}
-        with self.assertRaises(MLIntegrationError) as context:
-            MLService.predict(job_data)
-        self.assertIn("missing critical classification parameters", str(context.exception))
+        res = MLService.predict(job_data)
+        self.assertEqual(res["model_version"], "python-rule-engine-v1-fallback")
+        self.assertIn("prediction", res)
 
 if __name__ == '__main__':
     unittest.main()

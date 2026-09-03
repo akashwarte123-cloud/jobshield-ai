@@ -63,75 +63,58 @@ class MLService:
         except RuntimeError:
             node_ml_url = ""
 
-        # If NODE_ML_URL is disabled, empty, or set to 'none', use Python Rule Engine fallback
-        if not node_ml_url or str(node_ml_url).lower() in ('none', 'disabled', 'false'):
-            from app.services.rule_engine import RuleEngine
-            rule_eval = RuleEngine.analyze(job_data)
-            r_score = rule_eval.get("rule_score", 0)
-            verdict = "DANGER" if r_score >= 60 else ("CAUTION" if r_score >= 30 else "SAFE")
-            return {
-                "prediction": verdict,
-                "ml_score": r_score,
-                "confidence": 0.90,
-                "model_version": "python-rule-engine-v1"
+        # Attempt Node ML service call if NODE_ML_URL is configured and active
+        if node_ml_url and str(node_ml_url).lower() not in ('none', 'disabled', 'false'):
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             }
 
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
+            req = urllib.request.Request(
+                node_ml_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST"
+            )
 
-        req = urllib.request.Request(
-            node_ml_url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST"
-        )
-
-        try:
-            # Make the HTTP post request with a 5 second timeout limit
-            with urllib.request.urlopen(req, timeout=5) as response:
-                body = response.read().decode("utf-8")
-        except HTTPError as e:
             try:
-                err_body = e.read().decode("utf-8")
-                err_data = json.loads(err_body)
-                error_msg = err_data.get("error") or err_data.get("message") or str(e)
-            except Exception:
-                error_msg = str(e)
-            
-            current_app.logger.error("ML service HTTPError: %s", error_msg)
-            raise MLIntegrationError(f"ML Service HTTP error {e.code}: {error_msg}")
-        except URLError as e:
-            current_app.logger.error("ML service URLError: %s", str(e.reason))
-            raise MLIntegrationError(f"Connection refused or address resolution failure at {node_ml_url}.")
-        except TimeoutError:
-            current_app.logger.error("ML service request timed out.")
-            raise MLIntegrationError("The connection to the ML classification service timed out.")
-        except Exception as e:
-            current_app.logger.error("Unexpected error in MLService request: %s", str(e))
-            raise MLIntegrationError(f"Unexpected connection failure: {str(e)}")
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    body = response.read().decode("utf-8")
+                response_json = json.loads(body)
+                if response_json.get("success"):
+                    data = response_json.get("data") or {}
+                    analysis = data.get("analysis") or {}
+                    if "verdict" in analysis and "score" in analysis:
+                        return {
+                            "prediction": analysis["verdict"],
+                            "ml_score": analysis["score"],
+                            "confidence": None,
+                            "model_version": None
+                        }
+                    elif "riskScore" in data:
+                        verdict = "DANGER" if data.get("riskScore", 0) >= 60 else ("CAUTION" if data.get("riskScore", 0) >= 30 else "SAFE")
+                        return {
+                            "prediction": data.get("verdict") or verdict,
+                            "ml_score": data.get("riskScore", 0),
+                            "confidence": data.get("confidence", 95) / 100.0,
+                            "model_version": "node-ml-v1"
+                        }
+            except Exception as e:
+                try:
+                    current_app.logger.warning("Node ML unavailable, using Python RuleEngine fallback: %s", str(e))
+                except Exception:
+                    pass
 
-        # Parse JSON response body
-        try:
-            response_json = json.loads(body)
-        except json.JSONDecodeError:
-            raise MLIntegrationError("ML service response could not be parsed as valid JSON.")
+        # Python RuleEngine fallback when Node ML is unavailable, times out, or disabled
+        from app.services.rule_engine import RuleEngine
 
-        # Ensure prediction call was reported as successful
-        if not response_json.get("success"):
-            error_details = response_json.get("error", "Unknown ML service error.")
-            raise MLIntegrationError(f"ML service reported classification failure: {error_details}")
-
-        data = response_json.get("data") or {}
-        analysis = data.get("analysis") or {}
-
-        if "verdict" not in analysis or "score" not in analysis:
-            raise MLIntegrationError("ML service response body was missing critical classification parameters.")
+        rule_eval = RuleEngine.analyze(job_data)
+        r_score = rule_eval.get("rule_score", 0)
+        verdict = "DANGER" if r_score >= 60 else ("CAUTION" if r_score >= 30 else "SAFE")
 
         return {
-            "prediction": analysis["verdict"],
-            "ml_score": analysis["score"],
-            "confidence": None,
-            "model_version": None
+            "prediction": verdict,
+            "ml_score": r_score,
+            "confidence": 0.90,
+            "model_version": "python-rule-engine-v1-fallback"
         }
