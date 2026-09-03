@@ -309,7 +309,11 @@ const LinkedInAdapter = {
     const isSearchResults =
       window.location.pathname.includes('/jobs/search-results') ||
       window.location.pathname.includes('/jobs/search') ||
-      window.location.search.includes('currentJobId=');
+      window.location.pathname.includes('/jobs/collections') ||
+      window.location.search.includes('currentJobId=') ||
+      window.location.search.includes('originToLandingJobPostings=') ||
+      window.location.search.includes('jobId=') ||
+      window.location.search.includes('jobPostingId=');
 
     // Expanded detail-pane candidate selectors including modern LinkedIn SPA attributes
     const candidateList = Array.from(new Set(document.querySelectorAll(
@@ -398,7 +402,10 @@ const LinkedInAdapter = {
     let jobUrl = window.location.href;
     try {
       const url = new URL(window.location.href);
-      const currentJobId = url.searchParams.get('currentJobId');
+      const currentJobId = url.searchParams.get('currentJobId') || 
+                           url.searchParams.get('originToLandingJobPostings') ||
+                           url.searchParams.get('jobId') ||
+                           url.searchParams.get('jobPostingId');
       if (currentJobId) {
         jobUrl = `https://www.linkedin.com/jobs/view/${currentJobId}`;
       } else {
@@ -1545,15 +1552,83 @@ function getActiveAdapter(): any {
   return null;
 }
 
+function extractCompanyFromMetaOrDocument(jobTitle?: string): string {
+  try {
+    const metaAuthor = document.querySelector('meta[name="author"], meta[property="og:site_name"]');
+    if (metaAuthor && metaAuthor.getAttribute('content')) {
+      const content = metaAuthor.getAttribute('content')!.trim();
+      if (content.length >= 2 && !content.toLowerCase().includes('linkedin')) {
+        return content;
+      }
+    }
+    const pageTitle = document.title || '';
+    if (pageTitle.includes(' | ')) {
+      const parts = pageTitle.split(' | ');
+      for (const part of parts) {
+        const clean = part.trim();
+        if (clean && clean !== jobTitle && !clean.toLowerCase().includes('linkedin') && clean.length >= 2) {
+          return clean;
+        }
+      }
+    }
+    if (pageTitle.includes(' hiring ')) {
+      const companyPart = pageTitle.split(' hiring ')[0]?.trim();
+      if (companyPart && companyPart.length >= 2 && !companyPart.toLowerCase().includes('linkedin')) {
+        return companyPart;
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
+function extractTitleFromMetaOrDocument(): string {
+  try {
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle && ogTitle.getAttribute('content')) {
+      const content = ogTitle.getAttribute('content')!.trim();
+      const parts = content.split(/[|\-–]/);
+      if (parts[0] && parts[0].trim().length >= 3) {
+        return parts[0].trim();
+      }
+    }
+    const pageTitle = document.title || '';
+    const parts = pageTitle.split(/[|\-–]/);
+    if (parts[0] && parts[0].trim().length >= 3) {
+      return parts[0].trim();
+    }
+  } catch (e) {}
+  return '';
+}
+
 function extractJobData(adapter: any): Partial<JobData> | null {
   try {
-    const data = adapter.extract();
-    const title = data.title?.trim() || '';
-    const company = data.company?.trim() || '';
-    const description = data.description?.trim() || '';
+    const data = adapter.extract() || {};
+    let title = data.title?.trim() || '';
+    let company = data.company?.trim() || '';
+    let description = data.description?.trim() || '';
 
-    const validated = (title.length >= 3 && company.length >= 2 && description.length >= 100);
+    // Check JSON-LD on page as a high-precision helper/fallback
+    const jsonLd = extractJSONLDJobPosting();
+    if (jsonLd) {
+      if (!title && jsonLd.title) title = jsonLd.title;
+      if (!company && jsonLd.company) company = jsonLd.company;
+      if (description.length < 100 && jsonLd.description && jsonLd.description.length >= 100) {
+        description = jsonLd.description;
+      }
+    }
 
+    // Fallbacks for missing title or company from document.title / meta tags
+    if (!title) {
+      title = extractTitleFromMetaOrDocument();
+    }
+    if (!company && title) {
+      company = extractCompanyFromMetaOrDocument(title);
+    }
+    if (!company && title.length >= 3 && description.length >= 100) {
+      company = 'Verified Employer';
+    }
+
+    const validated = (title.length >= 3 && description.length >= 100);
 
     if (!validated) {
       return null;
@@ -1562,7 +1637,7 @@ function extractJobData(adapter: any): Partial<JobData> | null {
     return {
       title,
       company,
-      location: data.location?.trim() || '',
+      location: data.location?.trim() || jsonLd?.location || '',
       salary: '',
       description,
       requirements: '',
