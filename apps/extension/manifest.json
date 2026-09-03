@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobShield AI — Real-Time Job Scam Detector",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "AI-powered real-time job scam detector and domain hygiene scanner for LinkedIn, Indeed, Naukri, Internshala, and Glassdoor.",
   "permissions": [
     "activeTab",
