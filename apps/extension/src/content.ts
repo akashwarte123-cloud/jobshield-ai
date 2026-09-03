@@ -304,6 +304,26 @@ const LinkedInAdapter = {
     }
   },
   extract: (): Partial<JobData> => {
+    // 1. JSON-LD High-Precision Priority
+    const jsonLd = extractJSONLDJobPosting();
+    if (jsonLd && jsonLd.title && jsonLd.description && jsonLd.description.length >= 100) {
+      if (lastDetectionState !== 'job') {
+        lastDetectionState = 'job';
+        console.log("[JobShield] LinkedIn extraction via JSON-LD successful:", jsonLd.title);
+      }
+      return {
+        title: jsonLd.title,
+        company: jsonLd.company || extractCompanyFromMetaOrDocument(jsonLd.title) || 'Verified Employer',
+        location: jsonLd.location || '',
+        salary: '',
+        description: jsonLd.description,
+        requirements: '',
+        recruiter: '',
+        url: jsonLd.url || window.location.href,
+        source: 'LinkedIn'
+      };
+    }
+
     let container: Element | null = null;
 
     const isSearchResults =
@@ -357,36 +377,23 @@ const LinkedInAdapter = {
       }
     }
 
-    if (bestCandidate && bestScore >= 25) {
+    if (bestCandidate && bestScore >= 15) {
       container = bestCandidate;
       if (lastDetectionState !== 'job') {
         lastDetectionState = 'job';
-        console.log(`[JobShield] LinkedIn detailPane resolved: true (Score: ${bestScore})`);
-      }
-    } else if (!isSearchResults) {
-      // Direct /jobs/view/<id> pages can safely use document.body
-      container = document.body;
-      if (lastDetectionState !== 'job') {
-        lastDetectionState = 'job';
-        console.log("[JobShield] LinkedIn direct view extraction mode");
+        console.log(`[JobShield] LinkedIn detailPane resolved: true (Score: ${bestScore}, SearchMode: ${isSearchResults})`);
       }
     } else {
-      // Search-results SPA: NEVER analyze document.body. Return empty payload so extraction retries.
-      if (lastDetectionState !== 'waiting') {
-        lastDetectionState = 'waiting';
-        console.log("[JobShield] LinkedIn detail pane not ready — waiting for selected job");
+      // Fallback: search main layout containers or document.body
+      container = document.querySelector('.scaffold-layout__main') ||
+                  document.querySelector('main') ||
+                  document.querySelector('article') ||
+                  document.querySelector('#main') ||
+                  document.body;
+      if (lastDetectionState !== 'job') {
+        lastDetectionState = 'job';
+        console.log("[JobShield] LinkedIn container fallback mode active");
       }
-      return {
-        title: '',
-        company: '',
-        location: '',
-        salary: '',
-        description: '',
-        requirements: '',
-        recruiter: '',
-        url: window.location.href,
-        source: 'LinkedIn'
-      };
     }
 
     // Parse location from container
@@ -416,31 +423,16 @@ const LinkedInAdapter = {
       }
     } catch (e) {}
 
-    if (!container) {
-      return {
-        title: '',
-        company: '',
-        location: '',
-        description: '',
-        url: jobUrl,
-        source: 'LinkedIn'
-      };
-    }
+    const title = container ? extractLinkedInTitle(container) : '';
+    const company = container ? extractLinkedInCompany(container) : '';
+    const description = container ? extractLinkedInDescription(container) : '';
 
-    const title = extractLinkedInTitle(container);
-    const company = extractLinkedInCompany(container);
-    const description = extractLinkedInDescription(container);
-
-    console.log(`[JobShield] LinkedIn job candidate detected (Container tag: ${container.tagName})`);
+    console.log(`[JobShield] LinkedIn candidate evaluated (Container tag: ${container?.tagName || 'none'})`);
     console.log(`[JobShield] Job title extracted: "${title}"`);
     console.log(`[JobShield] Company extracted: "${company}"`);
     console.log(`[JobShield] Description extracted length: ${description.length} chars`);
 
-    if (title && company && description.length >= 100) {
-      console.log("[JobShield] Job extraction successful");
-    }
-
-    const result = {
+    return {
       title,
       company,
       location: locationEl?.textContent?.trim() || '',
@@ -448,8 +440,6 @@ const LinkedInAdapter = {
       url: jobUrl,
       source: 'LinkedIn'
     };
-
-    return result;
   }
 };
 
