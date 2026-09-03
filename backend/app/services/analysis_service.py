@@ -272,10 +272,12 @@ class AnalysisService:
         risk_level = risk_result["risk_level"]
         flags = risk_result["flags"]
 
-        # 5. Build concise explanation from flags
-        if not flags:
-            explanation = "Legitimate job listing patterns: no suspicious risk indicators detected."
-        else:
+        # 5. Build accurate forensic summary from scores and indicators
+        ml_score = risk_result.get("ml_score", 0)
+        rule_score = risk_result.get("rule_score", 0)
+        final_score = risk_result.get("final_score", 0)
+
+        if flags:
             reasons = []
             for f in flags:
                 msg = f["message"].strip()
@@ -283,8 +285,11 @@ class AnalysisService:
                     msg += "."
                 if msg not in reasons:
                     reasons.append(msg)
-            # Combine up to 2 key flags for readability
-            explanation = f"{risk_level.capitalize()} risk: " + " ".join(reasons[:2])
+            explanation = f"{risk_level.capitalize()} risk ({final_score}/100): " + " ".join(reasons[:2])
+        elif ml_score >= 50 or final_score >= 30:
+            explanation = f"{risk_level.capitalize()} risk ({final_score}/100): Statistical ML model detected structural risk patterns (ML Score: {ml_score}/100), though no deterministic rule flags were triggered."
+        else:
+            explanation = "Low risk (0/100): Standard legitimate job listing patterns. No rule-based or statistical threat indicators detected."
 
         # 6. Database Transaction persistence
         try:

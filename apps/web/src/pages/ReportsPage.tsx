@@ -695,7 +695,7 @@ export function ReportsPage({ onNavigate }: ReportsPageProps) {
                   <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Classification Signpost Flags</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {(!detailedReport.analysis.flags || detailedReport.analysis.flags.length === 0) ? (
-                      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>✓ No suspicious indicators found.</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>✓ No rule-based indicators detected.</div>
                     ) : detailedReport.analysis.flags.map((flag: any, i: number) => {
                       const sev = normalizeFlagSeverity(flag.severity);
                       const flagStyle = {
