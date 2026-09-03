@@ -293,7 +293,7 @@ export function AdminPanelPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Database connection:</span>
-                <span style={{ fontWeight: 700, color: 'var(--success)' }}>Active (SQLite)</span>
+                <span style={{ fontWeight: 700, color: 'var(--success)' }}>Active ({summary?.database_type || 'PostgreSQL'})</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Role scope limits:</span>

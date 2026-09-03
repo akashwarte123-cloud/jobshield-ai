@@ -80,7 +80,17 @@ def get_dashboard_summary():
 
     weekly_trends = [{'date': d, 'count': c} for d, c in sorted(counts_by_day.items())]
 
+    dialect_name = getattr(getattr(db, 'engine', None), 'dialect', None)
+    driver_name = dialect_name.name.lower() if dialect_name and hasattr(dialect_name, 'name') else 'postgresql'
+    if 'postgres' in driver_name:
+        database_type = 'PostgreSQL'
+    elif 'sqlite' in driver_name:
+        database_type = 'SQLite'
+    else:
+        database_type = driver_name.capitalize()
+
     return {
+        'database_type': database_type,
         'users': {
             'total': total_users,
         },
