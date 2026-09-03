@@ -282,35 +282,35 @@ export function AdminSupportTicketsPage() {
       {/* Detail Drawer Modal */}
       {selectedTicket && createPortal(
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(5,6,12,0.85)',
+          position: 'fixed', inset: 0, background: 'var(--bg-overlay)',
           backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 1000, padding: 24
         }} onClick={() => setSelectedTicket(null)}>
           <div className="animate-scale" style={{
-            background: 'linear-gradient(135deg, #0B131F 0%, #070D18 100%)',
-            border: '1px solid rgba(0, 216, 246, 0.25)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
             borderRadius: '20px', width: 'min(600px, calc(100vw - 32px))',
             maxHeight: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0, 216, 246, 0.08)',
+            boxShadow: 'var(--shadow-xl)',
           }} onClick={e => e.stopPropagation()}>
             
             {/* Modal Header */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '28px 36px 20px 36px', borderBottom: '1px solid var(--border)'
+              padding: '24px 32px 20px 32px', borderBottom: '1px solid var(--border)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(0,216,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00D8F6', border: '1px solid rgba(0,216,246,0.2)' }}>
+                <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--interactive-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--interactive)', border: '1px solid var(--interactive-border)' }}>
                   <LifeBuoy size={20} />
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>Support Ticket Details</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Support Ticket Details</h3>
               </div>
               <button 
                 onClick={() => setSelectedTicket(null)} 
                 aria-label="Close ticket details"
                 title="Close"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
+                  background: 'var(--bg-surface)',
                   border: '1px solid var(--border)',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
@@ -324,12 +324,12 @@ export function AdminSupportTicketsPage() {
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                  e.currentTarget.style.color = '#EF4444';
+                  e.currentTarget.style.background = 'var(--danger-dim)';
+                  e.currentTarget.style.borderColor = 'var(--danger-border)';
+                  e.currentTarget.style.color = 'var(--danger)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                  e.currentTarget.style.background = 'var(--bg-surface)';
                   e.currentTarget.style.borderColor = 'var(--border)';
                   e.currentTarget.style.color = 'var(--text-secondary)';
                 }}
@@ -340,7 +340,7 @@ export function AdminSupportTicketsPage() {
 
             {/* Scrollable Middle Content area */}
             <div style={{
-              flex: 1, overflowY: 'auto', padding: '24px 36px',
+              flex: 1, overflowY: 'auto', padding: '24px 32px',
               display: 'flex', flexDirection: 'column', gap: '20px'
             }}>
               {/* Ticket ID */}
@@ -350,9 +350,9 @@ export function AdminSupportTicketsPage() {
                 </span>
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
                   borderRadius: '12px', padding: '12px 18px', fontSize: '13.5px', color: 'var(--text)',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-mono)', fontWeight: 600
                 }}>
                   <span>{selectedTicket.id}</span>
                   <button 
@@ -362,11 +362,11 @@ export function AdminSupportTicketsPage() {
                     }}
                     title="Copy ID"
                     style={{
-                      background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer',
+                      background: 'none', border: 'none', color: 'var(--interactive)', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px',
                       borderRadius: '6px', transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0, 216, 246, 0.08)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--interactive-dim)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -383,9 +383,9 @@ export function AdminSupportTicketsPage() {
                   User Details
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text)' }}>
-                  <User size={14} color="var(--primary)" />
-                  <span style={{ fontWeight: 600 }}>{selectedTicket.user_name}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>({selectedTicket.user_email})</span>
+                  <User size={14} color="var(--interactive)" />
+                  <span style={{ fontWeight: 700, color: 'var(--text)' }}>{selectedTicket.user_name}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>({selectedTicket.user_email})</span>
                 </div>
               </div>
 
@@ -394,7 +394,7 @@ export function AdminSupportTicketsPage() {
                 <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Subject
                 </span>
-                <span style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
                   {selectedTicket.subject}
                 </span>
               </div>
@@ -405,10 +405,10 @@ export function AdminSupportTicketsPage() {
                   Message
                 </span>
                 <div style={{
-                  background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
                   borderRadius: '12px', padding: '16px 20px', color: 'var(--text)',
                   fontSize: '13.5px', lineHeight: 1.6, maxHeight: '200px', overflowY: 'auto',
-                  whiteSpace: 'pre-wrap'
+                  whiteSpace: 'pre-wrap', fontWeight: 500
                 }}>
                   {selectedTicket.message}
                 </div>
@@ -420,7 +420,7 @@ export function AdminSupportTicketsPage() {
                   <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
                     Submitted At
                   </span>
-                  <span style={{ fontSize: '12.5px', color: 'var(--text)' }}>
+                  <span style={{ fontSize: '12.5px', color: 'var(--text)', fontWeight: 600 }}>
                     {formatDate(selectedTicket.created_at)}
                   </span>
                 </div>
@@ -440,7 +440,7 @@ export function AdminSupportTicketsPage() {
 
             {/* Static Action buttons footer */}
             <div style={{
-              borderTop: '1px solid var(--border)', padding: '24px 36px 36px 36px',
+              borderTop: '1px solid var(--border)', padding: '20px 32px 28px 32px',
               display: 'flex', flexDirection: 'column', gap: '12px'
             }}>
               <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -457,13 +457,13 @@ export function AdminSupportTicketsPage() {
                       cursor: updatingStatus || selectedTicket.status === st ? 'not-allowed' : 'pointer',
                       border: '1px solid transparent', transition: 'all 0.15s ease',
                       background: selectedTicket.status === st 
-                        ? (st === 'OPEN' ? 'rgba(245,158,11,0.18)' : st === 'IN_PROGRESS' ? 'rgba(255,255,255,0.06)' : 'rgba(16,185,129,0.18)')
-                        : 'rgba(255,255,255,0.02)',
+                        ? (st === 'OPEN' ? 'var(--warning-dim)' : st === 'IN_PROGRESS' ? 'var(--neutral-bg)' : 'var(--safe-dim)')
+                        : 'var(--bg-surface)',
                       color: selectedTicket.status === st 
-                        ? (st === 'OPEN' ? '#F59E0B' : st === 'IN_PROGRESS' ? 'var(--text)' : '#10B981')
+                        ? (st === 'OPEN' ? 'var(--warning-text)' : st === 'IN_PROGRESS' ? 'var(--text)' : 'var(--safe-text)')
                         : 'var(--text-secondary)',
                       borderColor: selectedTicket.status === st 
-                        ? (st === 'OPEN' ? 'rgba(245,158,11,0.3)' : st === 'IN_PROGRESS' ? 'rgba(255,255,255,0.12)' : 'rgba(16,185,129,0.3)')
+                        ? (st === 'OPEN' ? 'var(--warning-border)' : st === 'IN_PROGRESS' ? 'var(--neutral-border)' : 'var(--safe-border)')
                         : 'var(--border)'
                     }}
                   >
